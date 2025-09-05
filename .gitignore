@@ -1,0 +1,4 @@
+.env
+devConfig.json
+node_modules/
+nodemon.json
