@@ -5,17 +5,16 @@ const {
   Interaction,
   MessageFlags,
 } = require("discord.js");
-const drawLine = require("../../utils/drawLine")
 
 /**
  * @param {Client} client
  * @param {Interaction} interaction
  */
-const handleBan = async (client, interaction) => {
+const handleKick = async (client, interaction) => {
   const targetUserId = interaction.options.get("target-user").value;
   const reason = interaction.options.get("reason")?.value || "No reason provided";
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   // Fetch the target member
   const targetUser = await interaction.guild.members.fetch(targetUserId).catch(() => null);
@@ -30,7 +29,7 @@ const handleBan = async (client, interaction) => {
   // Cannot ban the server owner
   if (targetUser.id === interaction.guild.ownerId) {
     return interaction.editReply({
-      content: "❌ Cannot ban the server owner.",
+      content: "❌ Cannot kick the server owner.",
       flags: MessageFlags.Ephemeral
     });
   }
@@ -42,60 +41,57 @@ const handleBan = async (client, interaction) => {
   // Check role hierarchy
   if (targetRolePosition >= requesterRolePosition) {
     return interaction.editReply({
-      content: "❌ You cannot ban this user because they have the same or higher role than you.",
+      content: "❌ You cannot kick this user because they have the same or higher role than you.",
       flags: MessageFlags.Ephemeral
     });
   }
 
   if (targetRolePosition >= botRolePosition) {
     return interaction.editReply({
-      content: "❌ I cannot ban this user because they have the same or higher role than me.",
+      content: "❌ I cannot kick this user because they have the same or higher role than me.",
       flags: MessageFlags.Ephemeral
     });
   }
 
-  // Attempt to ban the user
+  // Attempt to kick the user
   try {
-    var output =`✅ Successfully banned **${targetUser.user.tag}**\n\n**Reason:** ${reason}`
-    output += drawLine()
-    output += `Enter \`/unban **${targetUser.user.tag}**\` to unban **${targetUser.user.tag}**`
-    
-    await targetUser.ban({ reason });
+    await targetUser.kick({ reason })
     await interaction.editReply({
-      content: output
+      content: `✅ Successfully kicked **${targetUser.user.tag}**\n\n**Reason:** ${reason}`,
     });
   } catch (error) {
     console.error(error);
     await interaction.editReply({
-      content: "❌ An error occurred while trying to ban the user.",
+      content: "❌ An error occurred while trying to kick the user.",
       flags: MessageFlags.Ephemeral
     });
   }
 };
 
 module.exports = {
-  name: "ban",
-  description: "Bans a user from the server.",
+  name: "kick",
+  description: "Kicks a user from the server.",
   options: [
     {
       name: "target-user",
-      description: "The user you want to ban",
+      description: "The user you want to kick",
       type: ApplicationCommandOptionType.User,
       required: true,
     },
     {
       name: "reason",
-      description: "The reason for banning",
+      description: "The reason for kicking",
       type: ApplicationCommandOptionType.String,
     },
   ],
   permissionsRequired: [
     PermissionFlagsBits.Administrator,
-    PermissionFlagsBits.BanMembers,
+    PermissionFlagsBits.KickMembers,
   ],
   botPermissionsRequired: [
     PermissionFlagsBits.Administrator,
-    PermissionFlagsBits.BanMembers,
+    PermissionFlagsBits.KickMembers,
   ],
-  callback: handleBan,
+  callback: handleKick,
 };
+

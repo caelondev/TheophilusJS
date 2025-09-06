@@ -39,10 +39,14 @@ module.exports = async (client, interaction) => {
         if (!interaction.member.permissions.has(permission)) {
           interaction.reply({
 <<<<<<< HEAD
+<<<<<<< HEAD
             content: "❌ Not enough permissions.",
 =======
             content: "❌ You don't have enough permissions.",
 >>>>>>> cd5f026 (Fixed a typo)
+=======
+            content: "❌ Yoi don't have enough permissions.",
+>>>>>>> 8a768bd (Added banlist and unban command)
             flags: MessageFlags.Ephemeral,
           });
           return;

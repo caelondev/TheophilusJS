@@ -157,9 +157,13 @@ You are **NOT** permitted to:
 ## Credits
 
 **Developer**: [caelondev](https://github.com/caelondev)  
+<<<<<<< HEAD
 
 **Discord**: [ryodc_](https://discord.com/users/1264839050427367570)
 
+=======
+**Discord**: [ryodc_](https://discord.com/users/1264839050427367570)
+>>>>>>> 8a768bd (Added banlist and unban command)
 **Framework**: [Discord.js](https://discord.js.org/)  
 
 ---

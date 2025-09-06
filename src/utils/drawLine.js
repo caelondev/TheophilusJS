@@ -1,5 +1,9 @@
-module.exports = (count = 75, symbol = "—")=>{
-  console.log("\n")
-  console.log(symbol.repeat(count))
-  console.log("\n")
+module.exports = (count = 75, symbol = "—", output=false)=>{
+  var word = `\n${symbol.repeat(count)}\n`
+
+  if(output){
+    return word
+  }
+  
+  console.log(word)
 }
