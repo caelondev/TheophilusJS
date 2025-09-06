@@ -88,8 +88,8 @@ node index.js
 
 | Setting | Description | Example |
 |---------|-------------|---------|
-| `token` | Your Discord bot token (stored in `.env`) | `"your_token_here"` |
-| `admins` | Array of Discord user IDs with admin privileges | `["123456789012345678"]` |
+| `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `"your_token_here"` |
+| `devs` | Array of Discord user IDs with admin privileges | `["123456789012345678", "098765432123456789"]` |
 
 ### Example Configuration
 ```json
@@ -157,13 +157,9 @@ You are **NOT** permitted to:
 ## Credits
 
 **Developer**: [caelondev](https://github.com/caelondev)  
-<<<<<<< HEAD
 
 **Discord**: [ryodc_](https://discord.com/users/1264839050427367570)
 
-=======
-**Discord**: [ryodc_](https://discord.com/users/1264839050427367570)
->>>>>>> 8a768bd (Added banlist and unban command)
 **Framework**: [Discord.js](https://discord.js.org/)  
 
 ---
