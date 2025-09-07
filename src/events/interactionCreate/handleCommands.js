@@ -24,10 +24,18 @@ module.exports = async (client, interaction) => {
       return;
     }
 
+    // Server-only check
+    if(commandObject.serverSpecific){      
+      if(!interaction.inGuild()) return interaction.reply({
+        content: '❌ This command can only be used in a server.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
     // Test-server-only check
     if (commandObject.testOnly && interaction.guild.id !== testServer) {
       interaction.reply({
-        content: "⚠️ This command cannot be run here.",
+        content: "⚠️ This command can only be ran in a test server.",
         flags: MessageFlags.Ephemeral,
       });
       return;

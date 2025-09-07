@@ -13,8 +13,6 @@ const cooldowns = new Set()
 module.exports = async(client, message) =>{
   if(!message.inGuild() || message.author.bot || cooldowns.has(message.author.id)) return;
 
-  const xpToGive = getRandomRange(5, 15)
-
   const query = {
     userId: message.author.id,
     guildId: message.guild.id
@@ -24,8 +22,11 @@ module.exports = async(client, message) =>{
     const level = await Level.findOne(query)
 
     if(level){
+      // User exists, calculate XP based on their current level
+      const xpToGive = getRandomRange(level.level, 15 * Math.sqrt(level.level))
       level.xp += xpToGive
-      if(level.xp >=  calculateLevelXp(level.level)){
+      
+      if(level.xp >= calculateLevelXp(level.level)){
         level.xp -= calculateLevelXp(level.level);
         level.level += 1
 
@@ -41,30 +42,30 @@ module.exports = async(client, message) =>{
         return
       })
 
-      cooldowns.add(message.author.id)
-      setTimeout(()=>{
-        cooldowns.delete(message.author.id)
-      }, 60 * 1000);
+    } else { 
+      // New user, calculate XP for level 1
+      const xpToGive = getRandomRange(1, 15 * Math.sqrt(1)) // Start with level 1 calculations
       
-
-    } else { // if(!level)
-      const newLevel = await new Level({
+      const newLevel = new Level({
         userId: message.author.id,
         username: message.author.tag,
         guildId: message.guild.id,
-        xp: xpToGive
+        xp: xpToGive,
+        level: 1 // Make sure to set initial level
       })
-
-      cooldowns.add(message.author.id)
-      setTimeout(()=>{
-        cooldowns.delete(message.author.id)
-      }, 60 * 1000);
 
       await newLevel.save().catch((error)=>{
         console.log(`Error whilst instantiating new level: ${error}`)
         return
       })
     }
+
+    // Add cooldown after successful processing
+    cooldowns.add(message.author.id)
+    setTimeout(()=>{
+      cooldowns.delete(message.author.id)
+    }, 60 * 1000);
+
   } catch (error) {
     console.log(`There was an error leveling up ${message.author.tag}: ${error}`)
   }

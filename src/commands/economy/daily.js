@@ -1,24 +1,15 @@
 const { Client, Interaction } = require('discord.js');
 const User = require('../../models/User');
-
-const dailyAmount = 1000;
+const getRandomRange = require("../../utils/getRandomRange")
 
 /**
  * @param {Client} client
  * @param {Interaction} interaction
  */
 const handleDaily = async (client, interaction) => {
-  if (!interaction.inGuild()) {
-    interaction.reply({
-      content: '❌ This command can only be used in a server.',
-      ephemeral: true,
-    });
-    return;
-  }
-
   try {
     await interaction.deferReply();
-
+    const dailyAmount = getRandomRange(100, 1000)
     const query = {
       userId: interaction.member.id,
       guildId: interaction.guild.id,
@@ -64,7 +55,6 @@ const handleDaily = async (client, interaction) => {
     console.log(`Error with /daily: ${error}`);
     interaction.editReply({
       content: '❌ Oops! Something went wrong while executing this command.',
-      ephemeral: true,
     });
   }
 };
@@ -72,5 +62,6 @@ const handleDaily = async (client, interaction) => {
 module.exports = {
   name: 'daily',
   description: 'Collect your daily reward!',
+  serverSpecific: true,
   callback: handleDaily,
 };

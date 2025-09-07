@@ -11,7 +11,7 @@ const handlePing = async(client, interaction)=>{
   const ping = reply.createdTimestamp - interaction.createdTimestamp;
 
   interaction.editReply(
-    `Pong! Client: ${ping}ms | Websocket: ${client.ws.ping}ms`,
+    `Pong! Client: **${ping}ms** | Websocket: **${client.ws.ping}ms**`,
   );
 }
 

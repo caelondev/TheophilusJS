@@ -12,25 +12,27 @@ const Level = require("../../models/Level")
  * @param {Interaction} interaction
  * */
 const handleSetLevel = async(client, interaction) => {
-  if(!interaction.inGuild()) return;
-
   const userOpt = interaction.options.get("user")
   const desiredLevelOpt = interaction.options.get("desired-level")
   
   await interaction.deferReply()
   
   if(desiredLevelOpt.value < 0){
-    return interaction.editReply({
+    const err = interaction.editReply({
       content: "❌ You can’t set level below zero.",
       flags: MessageFlags.Ephemeral
     })
+    setTimeout(()=>{interaction.deleteReply(err)}, 3000)
+    return
   }
 
   if(userOpt.user.bot){
-    return interaction.editReply({
+    const err = interaction.editReply({
       content: "❌ You can’t set a bot’s level.",
       flags: MessageFlags.Ephemeral
     })
+    setTimeout(()=>{interaction.deleteReply(err)}, 3000)
+    return
   }
 
   const query = {
@@ -79,6 +81,7 @@ module.exports = {
       required: true,
     },
   ],
+  serverSpecific: true,
   permissionsRequired: [PermissionFlagsBits.Administrator],
   callback: handleSetLevel,
 };
