@@ -13,6 +13,7 @@ module.exports = async (client) => {
       testServer
     );
 
+    // Handle local commands (existing logic)
     for (const localCommand of localCommands) {
       const { name, description, options } = localCommand;
 
@@ -51,9 +52,23 @@ module.exports = async (client) => {
           options,
         });
         drawLine()
-        console.log(`👍 Registered command "${name}."`);
+        console.log(`👍 Registered command "${name}".`);
       }
     }
+
+    // Handle application commands that don't exist locally (new logic)
+    for (const applicationCommand of applicationCommands.cache.values()) {
+      const localCommand = localCommands.find(
+        (cmd) => cmd.name === applicationCommand.name
+      );
+
+      if (!localCommand) {
+        await applicationCommands.delete(applicationCommand.id);
+        drawLine()
+        console.log(`🗑 Unregistered command "${applicationCommand.name}" (not found locally).`);
+      }
+    }
+
   } catch (error) {
     console.log(`There was an error: ${error}`);
   }
