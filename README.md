@@ -25,6 +25,7 @@ A feature-rich Discord bot built with Discord.js, designed for seamless deployme
 
 ✅ **Ready-to-Deploy** - Fully functional Discord bot with minimal setup required  
 ✅ **Simple Configuration** - Customize your bot through a single `config.json` file  
+✅ Integrated with MongoDB - Store your users' info automatically
 ✅ **Command System** - Comprehensive command handler with admin controls  
 ✅ **Event Handling** - Built-in Discord event management  
 ✅ **Beginner Friendly** - Easy setup process with clear documentation  
@@ -39,7 +40,8 @@ Before installing TheophilusJS, ensure you have the following:
 - **[Node.js](https://nodejs.org/)** v18.0.0 or higher
 - **[npm](https://www.npmjs.com/get-npm)** package manager (included with Node.js)
 - **Discord Bot Token** - [Create a bot application](https://discord.com/developers/applications)
-- **Discord Server** with appropriate permissions to invite your bot
+- MongoDB Cluster - Create your cluster [here](cloud.mongodb.com)
+- **Discord Server** with appropriate permissions to invite your bot (Administrator permission is recommended)
 
 ---
 
@@ -60,6 +62,7 @@ npm install
 Create a `.env` file in the root directory and add your bot token:
 ```env
 DISCORD_TOKEN=your_bot_token_here
+MONGODB_URI=your_mongodb_cluster_uri_here
 ```
 
 ### 4. Configure the Bot
@@ -88,7 +91,8 @@ node index.js
 
 | Setting | Description | Example |
 |---------|-------------|---------|
-| `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `"your_token_here"` |
+| `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `1234567890987654321` |
+| `MONGODB_URI` | Your MongoDB cluster (stored in `.env`) | `MONGODB_URI="mongodb://username:password@host:port/database"`
 | `devs` | Array of Discord user IDs with admin privileges | `["123456789012345678", "098765432123456789"]` |
 
 ### Example Configuration
