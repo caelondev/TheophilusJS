@@ -29,12 +29,10 @@ module.exports = async(client, message) =>{
       if(level.xp >= calculateLevelXp(level.level)){
         level.xp -= calculateLevelXp(level.level);
         level.level += 1
+        level.save()
 
-        if(level.level === 69){
-          message.channel.send(`**${message.member}** you have leveled up to **level ${level.level}** nice 😏`)
-        } else {
-          message.channel.send(`**${message.member}** you have leveled up to **level ${level.level}**`)
-        }
+        message.channel.send(`**${message.member}** you have leveled up to **level ${level.level}** ${level.level === 69 ? "nice 😏" : ""}`)
+        
       }
 
       await level.save().catch((error)=>{

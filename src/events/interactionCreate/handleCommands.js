@@ -1,6 +1,6 @@
 const getConfig = require("../../utils/getConfig");
-const { devs, testServer } = getConfig();
-const { MessageFlags } = require("discord.js")
+const { devs, testServers } = getConfig();
+const { MessageFlags } = require("discord.js");
 const getLocalCommands = require("../../utils/getLocalCommands");
 
 module.exports = async (client, interaction) => {
@@ -10,7 +10,7 @@ module.exports = async (client, interaction) => {
 
   try {
     const commandObject = localCommands.find(
-      (cmd) => cmd.name === interaction.commandName
+      (cmd) => cmd.name === interaction.commandName,
     );
 
     if (!commandObject) return;
@@ -25,20 +25,26 @@ module.exports = async (client, interaction) => {
     }
 
     // Server-only check
-    if(commandObject.serverSpecific){      
-      if(!interaction.inGuild()) return interaction.reply({
-        content: '❌ This command can only be used in a server.',
-        flags: MessageFlags.Ephemeral
-      });
+    if (commandObject.serverSpecific) {
+      if (!interaction.inGuild()) {
+        interaction.reply({
+          content: "❌ This command can only be used in a server.",
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
     }
 
     // Test-server-only check
-    if (commandObject.testOnly && interaction.guild.id !== testServer) {
-      interaction.reply({
-        content: "⚠️ This command can only be ran in a test server.",
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
+    if (commandObject.testOnly) {
+      const guildId = interaction.guild?.id;
+      if (!guildId || !testServers.includes(guildId)) {
+        interaction.reply({
+          content: "⚠️ This command can only be ran in the test servers.",
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
     }
 
     // User permissions check
@@ -46,7 +52,6 @@ module.exports = async (client, interaction) => {
       for (const permission of commandObject.permissionsRequired) {
         if (!interaction.member.permissions.has(permission)) {
           interaction.reply({
-            content: "❌ Not enough permissions.",
             content: "❌ You don't have enough permissions.",
             flags: MessageFlags.Ephemeral,
           });
