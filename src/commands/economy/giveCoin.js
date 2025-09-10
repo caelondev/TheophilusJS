@@ -1,4 +1,4 @@
-const { Client, Interaction, ApplicationCommandOptionType } = require("discord.js");
+const { Client, Interaction, ApplicationCommandOptionType, MessageFlags } = require("discord.js");
 const User = require("../../models/User");
 
 /**
@@ -20,6 +20,13 @@ const handleGiveCoins = async (client, interaction) => {
     guildId: interaction.guildId,
     userId: interaction.user.id
   };
+
+  if(userOpt.user.id === interaction.user.id){
+    return interaction.reply({
+      content: "❌ You can’t give coins to yourself.",
+      flags: MessageFlags.Ephemeral
+    })
+  }
 
   try {
     await interaction.deferReply();
