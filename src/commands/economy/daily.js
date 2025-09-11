@@ -63,6 +63,5 @@ module.exports = {
   name: 'daily',
   description: 'Collect your daily reward!',
   serverSpecific: true,
-  testOnly: true,
   callback: handleDaily,
 };
