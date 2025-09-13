@@ -1,4 +1,6 @@
 {
+  "developerCommandPrefix": "!",
+  "developerCommandSuffix": "",
   "ownerId": "1264839050427367570",
   "botClientId": "1413061815931506751",
   "testServers": ["1412721200827858976"],

@@ -7,11 +7,9 @@ const botConfigSchema = new Schema({
   },
   channelId: {
     type: String,
-    required: true
   },
   channelName: {
     type: String,
-    required: true,
     default: "", // will be filled at runtime if empty
   },
 });
