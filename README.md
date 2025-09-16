@@ -28,7 +28,8 @@ A feature-rich Discord bot built with Discord.js, designed for seamless deployme
 ✅ Integrated with MongoDB - Store your users' info automatically
 ✅ **Command System** - Comprehensive command handler with admin controls  
 ✅ **Event Handling** - Built-in Discord event management  
-✅ **Beginner Friendly** - Easy setup process with clear documentation    ✅ **Stable & Reliable** - Built on Discord.js v14 for optimal performance
+✅ **Beginner Friendly** - Easy setup process with clear documentation    
+✅ **Stable & Reliable** - Built on Discord.js v14 for optimal performance
 
 ---
 
