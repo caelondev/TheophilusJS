@@ -40,6 +40,7 @@ Before installing TheophilusJS, ensure you have the following:
 - **[Node.js](https://nodejs.org/)** v18.0.0 or higher
 - **[npm](https://www.npmjs.com/get-npm)** package manager (included with Node.js)
 - **Discord Bot Token** - [Create a bot application](https://discord.com/developers/applications)
+- Groq API Key - Used for AI logic. Get your key [here](https://console.groq.com)
 - MongoDB Cluster - Create your cluster [here](cloud.mongodb.com)
 - **Discord Server** with appropriate permissions to invite your bot (Administrator permission is recommended)
 
@@ -63,6 +64,7 @@ Create a `.env` file in the root directory and add your bot token:
 ```env
 DISCORD_TOKEN=your_bot_token_here
 MONGODB_URI=your_mongodb_cluster_uri_here
+GROQ_KEY=your_groq_api_key_here
 ```
 
 ### 4. Configure the Bot
@@ -93,6 +95,7 @@ node index.js
 |---------|-------------|---------|
 | `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `1234567890987654321` |
 | `MONGODB_URI` | Your MongoDB cluster (stored in `.env`) | `MONGODB_URI="mongodb://username:password@host:port/database"`
+| `GROQ_KEY` | Your Groq key (stored in `.env`) | N/A |
 | `devs` | Array of Discord user IDs with admin privileges | `["123456789012345678", "098765432123456789"]` |
 
 ### Example Configuration
