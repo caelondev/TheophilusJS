@@ -1,5 +1,5 @@
 // starts the bot
-require("./src/index.js")
+require("./src/init.js")
 
 // create pinger dashboard 
 require("./src/pinger.js")

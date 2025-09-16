@@ -50,14 +50,14 @@ const handleTimeout = async(client, interaction)=>{
 
   if (targetRolePosition >= requesterRolePosition) {
     return interaction.editReply({
-      content: "❌ You cannot kick this user because they have the same or higher role than you.",
+      content: "❌ You cannot timeout this user because they have the same or higher role than you.",
       flags: MessageFlags.Ephemeral
     });
   }
 
   if (targetRolePosition >= botRolePosition) {
     return interaction.editReply({
-      content: "❌ I cannot kick this user because they have the same or higher role than me.",
+      content: "❌ I cannot timeout this user because they have the same or higher role than me.",
       flags: MessageFlags.Ephemeral
     });
   }

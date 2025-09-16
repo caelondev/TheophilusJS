@@ -15,13 +15,10 @@ const userSchema = new Schema({
   },
   lastDaily: {
     type: Date,
-
-    required: true
   },
   lastSteal: {
     type: Date,
     default: null,
-    required: true
   },
   stealChancesLeft: {
     default: 5,
