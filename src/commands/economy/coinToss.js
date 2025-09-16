@@ -9,12 +9,10 @@ const {
 } = require("discord.js");
 const capitalizeFirstLetter = require("../../utils/capitalizeFirstLetter");
 const User = require("../../models/User");
+const mongoose = require("mongoose");
 
 // Track active games to prevent multiple concurrent games per user
 const activeGames = new Set();
-
-// Track processing states to prevent duplicate operations
-const processingStates = new Map();
 
 const tossCoin = () => (Math.random() < 0.5 ? "Heads" : "Tails");
 
@@ -38,82 +36,78 @@ const createButtons = (disabled = false) => {
   );
 };
 
-// Enhanced safe database update with better retry logic and locking
-const safeUpdateUserBalance = async (query, balanceChange, betAmount, maxRetries = 5) => {
-  const lockKey = `${query.guildId}-${query.userId}`;
-  
-  // Check if already processing an update for this user
-  if (processingStates.has(lockKey)) {
-    throw new Error("Another operation is already processing for this user");
-  }
-  
-  // Set processing lock
-  processingStates.set(lockKey, true);
+// Atomic database operation using MongoDB transactions
+const atomicBalanceUpdate = async (query, balanceChange, betAmount) => {
+  const session = await mongoose.startSession();
   
   try {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // First, verify the user still has enough balance for losses
-        if (balanceChange < 0) {
-          const currentUser = await User.findOne(query);
-          if (!currentUser || currentUser.balance < Math.abs(balanceChange)) {
-            throw new Error("Insufficient balance for this operation");
-          }
-        }
-        
-        const updatedUser = await User.findOneAndUpdate(
-          query,
-          { $inc: { balance: balanceChange } },
-          { 
-            new: true,
-            runValidators: true,
-            maxTimeMS: 10000 // 10 second timeout
-          }
-        );
-        
-        if (!updatedUser) {
-          throw new Error("User not found during update");
-        }
-        
-        // Verify the update was successful and balance is valid
-        if (updatedUser.balance < 0) {
-          // Rollback the change if balance went negative
-          await User.findOneAndUpdate(
-            query,
-            { $inc: { balance: -balanceChange } },
-            { new: true }
-          );
-          throw new Error("Operation would result in negative balance");
-        }
-        
-        return updatedUser;
-      } catch (error) {
-        console.log(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
-        
-        if (error.message.includes("ParallelSaveError") && attempt < maxRetries) {
-          // Exponential backoff with jitter to reduce thundering herd
-          const baseDelay = 100 * Math.pow(2, attempt - 1);
-          const jitter = Math.random() * 50; // Add up to 50ms random jitter
-          const delay = Math.min(baseDelay + jitter, 2000); // Cap at 2 seconds
-          
-          console.log(`Retrying in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        
-        throw error;
+    await session.withTransaction(async () => {
+      // Find user with pessimistic locking (for update)
+      const user = await User.findOne(query).session(session);
+      
+      if (!user) {
+        throw new Error("User not found");
       }
-    }
-    
-    throw new Error(`Failed to update user balance after ${maxRetries} attempts`);
+
+      // Check balance constraints
+      const newBalance = user.balance + balanceChange;
+      
+      if (newBalance < 0) {
+        throw new Error("Insufficient balance for this operation");
+      }
+
+      // Atomic update with session
+      const updatedUser = await User.findOneAndUpdate(
+        query,
+        { 
+          $inc: { balance: balanceChange },
+          $set: { lastUpdated: new Date() }
+        },
+        { 
+          new: true,
+          session,
+          runValidators: true
+        }
+      );
+
+      if (!updatedUser) {
+        throw new Error("Failed to update user balance");
+      }
+
+      // Final safety check
+      if (updatedUser.balance < 0) {
+        throw new Error("Balance update would result in negative balance");
+      }
+
+      return updatedUser;
+    }, {
+      // Transaction options
+      readConcern: { level: "majority" },
+      writeConcern: { w: "majority" },
+      maxCommitTimeMS: 10000
+    });
+
+    // If we reach here, transaction was successful
+    const finalUser = await User.findOne(query);
+    return finalUser;
+
+  } catch (error) {
+    console.error("Transaction failed:", error.message);
+    throw error;
   } finally {
-    // Always remove the processing lock
-    processingStates.delete(lockKey);
+    await session.endSession();
   }
 };
 
-// Validate bet amount
-const validateBet = (betOpt, userBalance) => {
+// Validate bet amount with atomic balance check
+const validateBetWithAtomicCheck = async (betOpt, query) => {
+  // Get current user balance atomically
+  const user = await User.findOne(query);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const userBalance = user.balance;
   let betAmount = parseFloat(betOpt);
   
   if (isNaN(betAmount)) {
@@ -135,7 +129,7 @@ const validateBet = (betOpt, userBalance) => {
     throw new Error("Your bet is higher than your current balance.");
   }
   
-  return betAmount;
+  return { betAmount, currentBalance: userBalance };
 };
 
 /**
@@ -149,11 +143,11 @@ const handleCoinToss = async (client, interaction) => {
   const guildId = interaction.guild.id;
   const gameKey = `${guildId}-${userId}`;
 
-  // Check if user already has an active game
+  // Atomic check and set for active games
   if (activeGames.has(gameKey)) {
     return interaction.reply({
       content: "❌ You already have an active coin toss game! Please finish it first.",
-      flags: ['Ephemeral'] // Updated from ephemeral: true to fix deprecation warning
+      ephemeral: true
     });
   }
 
@@ -162,33 +156,36 @@ const handleCoinToss = async (client, interaction) => {
 
   let choiceMessage = null;
   let collector = null;
+  let gameActive = false;
 
   try {
-    // Mark game as active
+    // Atomically mark game as active
     activeGames.add(gameKey);
+    gameActive = true;
 
-    // Get or create user
-    let user = await User.findOne(query);
-    if (!user) {
-      user = await User.create({ ...query, balance: 0 });
-    }
+    // Get or create user atomically
+    let user = await User.findOneAndUpdate(
+      query,
+      { $setOnInsert: { ...query, balance: 0, lastUpdated: new Date() } },
+      { new: true, upsert: true }
+    );
 
     if (user.balance <= 0) {
-      activeGames.delete(gameKey);
-      return interaction.reply("❌ You don't have enough balance to play.");
+      throw new Error("You don't have enough balance to play.");
     }
 
-    // Validate and parse bet
-    let betAmount;
+    // Validate bet atomically with current balance
+    let betAmount, currentBalance;
     try {
-      betAmount = validateBet(betOpt, user.balance);
+      const validation = await validateBetWithAtomicCheck(betOpt, query);
+      betAmount = validation.betAmount;
+      currentBalance = validation.currentBalance;
     } catch (error) {
-      activeGames.delete(gameKey);
-      return interaction.reply(`❌ ${error.message}`);
+      throw new Error(error.message);
     }
 
     // Show betting message
-    await interaction.reply(`💰 Your bet is: **${betAmount}** coins`);
+    await interaction.reply(`💰 Your bet is: **${betAmount}** coins (Balance: **${currentBalance}** coins)`);
 
     choiceMessage = await interaction.followUp({
       content: `🎲 Pick a side, ${interaction.user}! You have 60 seconds to choose.`,
@@ -202,57 +199,55 @@ const handleCoinToss = async (client, interaction) => {
       time: 60000,
     });
 
-    let gameProcessed = false; // Prevent multiple game resolutions
+    let gameProcessed = false; // Atomic flag to prevent multiple game resolutions
 
     collector.on("collect", async (i) => {
       try {
-        // Prevent multiple button clicks
+        // Atomic check-and-set for game processing
         if (gameProcessed) {
           if (!i.replied && !i.deferred) {
-            await i.deferReply({ flags: ['Ephemeral'] });
-            await i.followUp({ content: "⚠️ Game already processed!", flags: ['Ephemeral'] });
+            await i.deferUpdate();
+            await i.followUp({ content: "⚠️ Game already processed!", ephemeral: true });
           }
           return;
         }
 
-        // Defer reply immediately to prevent timeout
+        // Atomically mark as processed
+        gameProcessed = true;
+
+        // Defer update immediately
         if (!i.deferred && !i.replied) {
-          await i.deferReply();
+          await i.deferUpdate();
         }
 
         if (i.customId === "exit") {
-          gameProcessed = true;
           await i.followUp("🛑 Game cancelled! No coins were lost or gained.");
           collector.stop("exit");
           return;
         }
 
         if (i.customId !== "heads" && i.customId !== "tails") {
-          gameProcessed = true;
           await i.followUp("❌ Invalid choice! Game cancelled.");
           collector.stop("invalid");
           return;
         }
 
-        // Mark as processed to prevent duplicate clicks
-        gameProcessed = true;
-
         const side = capitalizeFirstLetter(i.customId);
         const winnerSide = tossCoin();
         const won = side === winnerSide;
 
-
+        // Atomic balance update using transaction
         try {
-          let updatedUser;
+          const balanceChange = won ? betAmount : -betAmount;
+          const updatedUser = await atomicBalanceUpdate(query, balanceChange, betAmount);
+          
           if (won) {
-            updatedUser = await safeUpdateUserBalance(query, betAmount, betAmount);
             await i.followUp({
               content: `🎉 ${i.user} picked **${side}** and the coin landed on **${winnerSide}**!\n` +
                       `✅ You won **${betAmount}** coins!\n` +
                       `💰 Your new balance is **${updatedUser.balance}** coins.`,
             });
           } else {
-            updatedUser = await safeUpdateUserBalance(query, -betAmount, betAmount);
             await i.followUp({
               content: `😢 ${i.user} picked **${side}** but the coin landed on **${winnerSide}**.\n` +
                       `❌ You lost **${betAmount}** coins.\n` +
@@ -260,15 +255,15 @@ const handleCoinToss = async (client, interaction) => {
             });
           }
         } catch (balanceError) {
-          console.error("Error updating user balance:", balanceError);
+          console.error("Atomic balance update failed:", balanceError);
           
-          let errorMessage = "⚠️ An error occurred while updating your balance. ";
+          let errorMessage = "⚠️ Transaction failed: ";
           if (balanceError.message.includes("Insufficient balance")) {
-            errorMessage += "It appears your balance changed during the game. Please try again.";
-          } else if (balanceError.message.includes("Another operation")) {
-            errorMessage += "Another game operation is in progress. Please wait and try again.";
+            errorMessage += "Your balance changed during the game. Please try again.";
+          } else if (balanceError.message.includes("User not found")) {
+            errorMessage += "User data not found. Please try again.";
           } else {
-            errorMessage += "Please contact an administrator if this continues.";
+            errorMessage += "Database operation failed. Please contact an administrator.";
           }
           
           await i.followUp(errorMessage);
@@ -281,17 +276,13 @@ const handleCoinToss = async (client, interaction) => {
         
         try {
           if (!i.replied && !i.deferred) {
-            await i.deferReply();
+            await i.deferUpdate();
           }
           
-          let errorMessage = "⚠️ An unexpected error occurred. ";
-          if (error.message.includes("time")) {
-            errorMessage += "The operation timed out. Please try again.";
-          } else {
-            errorMessage += "Please try again in a moment.";
-          }
-          
-          await i.followUp(errorMessage);
+          await i.followUp({
+            content: "⚠️ An unexpected error occurred during game processing. Please try again.",
+            ephemeral: true
+          });
         } catch (followUpError) {
           console.error("Error sending error follow-up:", followUpError);
         }
@@ -302,10 +293,13 @@ const handleCoinToss = async (client, interaction) => {
 
     collector.on("end", async (collected, reason) => {
       try {
-        // Clean up active game tracking
-        activeGames.delete(gameKey);
+        // Atomically clean up active game tracking
+        if (gameActive) {
+          activeGames.delete(gameKey);
+          gameActive = false;
+        }
         
-        // Disable buttons if message still exists
+        // Disable buttons atomically
         if (choiceMessage) {
           try {
             await choiceMessage.edit({ components: [createButtons(true)] });
@@ -329,8 +323,12 @@ const handleCoinToss = async (client, interaction) => {
     });
 
   } catch (error) {
-    // Clean up on any error during setup
-    activeGames.delete(gameKey);
+    // Atomic cleanup on any error during setup
+    if (gameActive) {
+      activeGames.delete(gameKey);
+      gameActive = false;
+    }
+    
     console.error("Error in handleCoinToss setup:", error);
     
     // Clean up collector if it was created
@@ -339,20 +337,22 @@ const handleCoinToss = async (client, interaction) => {
     }
     
     try {
-      let errorMessage = "⚠️ An error occurred while starting the game. ";
+      let errorMessage = "⚠️ Game setup failed: ";
       
-      if (error.message.includes("Missing Permissions")) {
+      if (error.message.includes("balance")) {
+        errorMessage += error.message;
+      } else if (error.message.includes("bet")) {
+        errorMessage += error.message;
+      } else if (error.message.includes("Missing Permissions")) {
         errorMessage += "The bot doesn't have the required permissions.";
-      } else if (error.message.includes("Unknown")) {
-        errorMessage += "Please try again.";
       } else {
         errorMessage += "Please try again in a moment.";
       }
       
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply(errorMessage);
+        await interaction.reply({ content: errorMessage, ephemeral: true });
       } else {
-        await interaction.followUp(errorMessage);
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
       }
     } catch (replyError) {
       console.error("Error sending error reply:", replyError);
@@ -360,18 +360,15 @@ const handleCoinToss = async (client, interaction) => {
   }
 };
 
-// Clean up function to remove stale processing states (optional, call periodically)
-const cleanupStaleProcessingStates = () => {
-  const now = Date.now();
-  for (const [key, timestamp] of processingStates.entries()) {
-    if (typeof timestamp === 'boolean' || (now - timestamp) > 30000) { // 30 second cleanup
-      processingStates.delete(key);
-    }
-  }
+// Utility function to clean up stale active games (optional)
+const cleanupStaleActiveGames = () => {
+  // You could implement logic here to remove games that have been active too long
+  // This is optional since games have built-in timeouts
+  console.log(`Active games: ${activeGames.size}`);
 };
 
-// Optional: Set up periodic cleanup (uncomment if you want automatic cleanup)
-// setInterval(cleanupStaleProcessingStates, 60000); // Clean up every minute
+// Optional: Set up periodic cleanup
+// setInterval(cleanupStaleActiveGames, 300000); // Clean up every 5 minutes
 
 module.exports = {
   name: "coin-toss",

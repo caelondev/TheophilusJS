@@ -2,3 +2,5 @@
 devConfig.json
 node_modules/
 nodemon.json
+src/developer-commands/personal/
+src/commands/personal/

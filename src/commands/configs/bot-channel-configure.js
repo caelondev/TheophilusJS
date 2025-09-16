@@ -1,22 +1,23 @@
 const {
   Client,
-  ChatInputCommandInteraction,
+  Interaction,
   ApplicationCommandOptionType,
+  MessageFlags,
   PermissionFlagsBits,
 } = require("discord.js");
 const BotConfig = require("../../models/BotConfig");
 
 /**
  * @param {Client} client
- * @param {ChatInputCommandInteraction} interaction
+ * @param {Interaction} interaction
  */
 const handleBotConfigureChannel = async (client, interaction) => {
+  // Always defer immediately to avoid "application didn't respond"
+  await interaction.deferReply();
+
+  const botChannelOpt = interaction.options.getChannel("channel");
+
   try {
-    // Defer immediately (ephemeral works here)
-    await interaction.deferReply({ ephemeral: true });
-
-    const botChannelOpt = interaction.options.getChannel("channel");
-
     // Fetch or create config
     let botConfig = await BotConfig.findOne({ guildId: interaction.guild.id });
     if (!botConfig) {
@@ -27,27 +28,22 @@ const handleBotConfigureChannel = async (client, interaction) => {
     botConfig.channelId = botChannelOpt.id;
     botConfig.channelName = botChannelOpt.name;
 
+    // Save
     await botConfig.save();
 
-    // Final response (no flags needed here)
-    await interaction.editReply(
-      `✅ Successfully set bot's channel to ${botChannelOpt}.`
-    );
+    // Edit reply after everything succeeds
+    await interaction.editReply({
+      content: `✅ Successfully set bot's channel to ${botChannelOpt}.`,
+      flags: MessageFlags.Ephemeral,
+    });
   } catch (error) {
     console.error(error);
 
-    // Safe fallback response
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply(
-        "❌ An error occurred while configuring the bot's channel. Please try again later..."
-      );
-    } else {
-      await interaction.reply({
-        content:
-          "❌ An error occurred before I could respond. Please try again later...",
-        ephemeral: true,
-      });
-    }
+    // Update with error message
+    await interaction.editReply({
+      content: `❌ An error occurred while configuring the bot's channel. Please try again later...`,
+      flags: MessageFlags.Ephemeral,
+    });
   }
 };
 
@@ -63,6 +59,7 @@ module.exports = {
       required: true,
     },
   ],
+  // ⚠️ Typo fix: should be Administrator, not Adminstrator
   permissionsRequired: [PermissionFlagsBits.Administrator],
   serverSpecific: true,
   debugger: true,
