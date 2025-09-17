@@ -34,7 +34,7 @@ Here are your rules for replying:
 6. Add related emojis base on the greet vibe
 7. Be creative wih your response
 
-STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`
+STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
         },
         {
           role: "user",
@@ -45,9 +45,6 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`
       max_completion_tokens: 300,
       temperature: 0.2,
     });
-
-    // Debug full response once to see structure
-    console.log("Groq raw response:", JSON.stringify(greet, null, 2));
 
     const response =
       greet.choices?.[0]?.message?.content?.trim() ||
@@ -60,14 +57,14 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`
       await message.reply(capitalizeFirstLetter(response));
       cooldowns.add(userId);
     }
-
   } catch (error) {
     console.log("Groq API Error:", error);
 
     // Fallback for rate limits or errors
     if (error.message?.includes("rate_limit_exceeded")) {
       console.log("Rate limit hit - using simple fallback");
-      const greetingPattern = /^(hi|hello|hey|good morning|good evening|sup|yo)\b/i;
+      const greetingPattern =
+        /^(hi|hello|hey|good morning|good evening|sup|yo)\b/i;
       if (greetingPattern.test(message.content.trim())) {
         await message.reply(`Hello <@${message.author.id}>! 👋`);
       }
