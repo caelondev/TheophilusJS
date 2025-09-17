@@ -37,7 +37,7 @@ const atomicLevelCheck = async (query, userTag) => {
         const xpNeeded = calculateLevelXp(currentLevel);
         
         if (remainingXp >= xpNeeded) {
-          remainingXp -= xpNeeded;
+          remainingXp = 0;
           currentLevel += 1;
           levelsGained++;
           result.leveledUp = true;
