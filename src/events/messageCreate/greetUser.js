@@ -46,12 +46,11 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
       temperature: 0.2,
     });
 
-    const response =
+   const response =
       greet.choices?.[0]?.message?.content?.trim() ||
       greet.choices?.[0]?.text?.trim() ||
       "";
 
-    console.log("Parsed response:", response);
 
     if (response && response !== "NO_GREETING") {
       await message.reply(capitalizeFirstLetter(response));
