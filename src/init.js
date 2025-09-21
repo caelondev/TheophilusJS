@@ -16,7 +16,7 @@ const client = new Client({
   ]
 })
 
-const loginBot = (TOKEN)=>{
+ loginBot = (TOKEN)=>{
   try{
     client.login(TOKEN)
   } catch(error) {
