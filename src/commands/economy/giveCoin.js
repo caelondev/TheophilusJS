@@ -1,4 +1,9 @@
-const { Client, Interaction, ApplicationCommandOptionType, MessageFlags } = require("discord.js");
+const {
+  Client,
+  Interaction,
+  ApplicationCommandOptionType,
+  MessageFlags,
+} = require("discord.js");
 const User = require("../../models/User");
 
 /**
@@ -13,19 +18,19 @@ const handleGiveCoins = async (client, interaction) => {
 
   const queryOne = {
     guildId: interaction.guild.id,
-    userId: userOpt.user.id
+    userId: userOpt.user.id,
   };
 
   const queryTwo = {
     guildId: interaction.guildId,
-    userId: interaction.user.id
+    userId: interaction.user.id,
   };
 
-  if(userOpt.user.id === interaction.user.id){
+  if (userOpt.user.id === interaction.user.id) {
     return interaction.reply({
       content: "❌ You can’t give coins to yourself.",
-      flags: MessageFlags.Ephemeral
-    })
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
   try {
@@ -48,12 +53,14 @@ const handleGiveCoins = async (client, interaction) => {
     if (!userToGive) {
       userToGive = new User({
         ...queryOne,
-        balance: 0
+        balance: 0,
       });
     }
 
     if (!userToDeduct || userToDeduct.balance < amount) {
-      return interaction.editReply(`❌ Cannot give **${amount} coins** – insufficient balance!`);
+      return interaction.editReply(
+        `❌ Cannot give **${amount} coins** – insufficient balance!`,
+      );
     }
 
     // Start transaction
@@ -74,10 +81,14 @@ const handleGiveCoins = async (client, interaction) => {
       session.endSession();
     }
 
-    return interaction.editReply(`✅ Successfully gave **+${amount} coins** to **<@${userOpt.user.id}>**! Their new balance is now: **${userToGive.balance} coins** whilst your new balance is now: **${userToDeduct.balance} coins**`);
+    return interaction.editReply(
+      `✅ Successfully gave **+${amount} coins** to **<@${userOpt.user.id}>**! Their new balance is now: **${userToGive.balance} coins** whilst your new balance is now: **${userToDeduct.balance} coins**`,
+    );
   } catch (error) {
     console.log(error);
-    return interaction.editReply("❌ An error occurred while processing the transaction.");
+    return interaction.editReply(
+      "❌ An error occurred while processing the transaction.",
+    );
   }
 };
 
@@ -89,15 +100,17 @@ module.exports = {
       name: "user",
       description: "The user you want to give your money",
       type: ApplicationCommandOptionType.User,
-      required: true
+      required: true,
     },
     {
       name: "amount",
-      description: "The amount of money you want to give to the user (All, Half, 1, 30, 50...)",
+      description:
+        "The amount of money you want to give to the user (All, Half, 1, 30, 50...)",
       type: ApplicationCommandOptionType.String,
-      required: true
-    }
+      required: true,
+    },
   ],
+  serverSpecific: true,
   cooldown: 5000,
-  callback: handleGiveCoins
+  callback: handleGiveCoins,
 };

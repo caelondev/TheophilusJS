@@ -33,7 +33,7 @@ const handleQuote = async (client, interaction) => {
     const json = await response.json();
 
     const quoteEmbed = new EmbedBuilder()
-      .setTitle(`${json.author} once said:`)
+      .setAuthor({ name:`${json.author} once said...` })
       .setDescription(`"${json.quote}"`)
       .setColor("Random")
       .setTimestamp()
@@ -58,6 +58,5 @@ const handleQuote = async (client, interaction) => {
 module.exports = {
   name: "quote",
   description: "Sends a random quote.",
-  serverSpecific: true,
   callback: handleQuote,
 };

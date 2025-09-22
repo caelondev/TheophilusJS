@@ -97,6 +97,7 @@ module.exports = {
     PermissionFlagsBits.Administrator,
     PermissionFlagsBits.KickMembers,
   ],
+  serverSpecific: true,
   channelIndependent: true,
   callback: handleKick,
 };

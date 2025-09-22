@@ -78,7 +78,6 @@ const handleLyrics = async (client, interaction) => {
         ],
       });
     }
-
   } catch (error) {
     console.error(error);
     interaction.editReply("An error occurred whilst processing your response.");
@@ -102,6 +101,5 @@ module.exports = {
     },
   ],
   cooldown: 10_000,
-  serverSpecific: true,
   callback: handleLyrics,
 };

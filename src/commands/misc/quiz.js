@@ -206,6 +206,5 @@ module.exports = {
   name: "quiz",
   description: "Sends a random quiz question",
   cooldown: 5000,
-  serverSpecific: true,
   callback: handleQuiz,
 };

@@ -54,6 +54,7 @@ module.exports = {
   name: "banlist",
   description: "Lists all banned users.",
   channelIndependent: true,
+  serverSpecific: true,
   callback: handleBanlist,
   permissionsRequired: [
     PermissionFlagsBits.Administrator,

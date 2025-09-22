@@ -62,5 +62,6 @@ module.exports = {
     PermissionFlagsBits.Administrator,
     PermissionFlagsBits.BanMembers,
   ],
+  serverSpecific: true,
   callback: handleUnban,
 };

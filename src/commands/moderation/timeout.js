@@ -127,5 +127,6 @@ module.exports = {
     PermissionFlagsBits.Administrator,
     PermissionFlagsBits.MuteMembers,
   ],
+  serverSpecific: true,
   callback: handleTimeout,
 };

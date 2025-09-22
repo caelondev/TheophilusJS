@@ -97,6 +97,7 @@ module.exports = {
     PermissionFlagsBits.Administrator,
     PermissionFlagsBits.BanMembers,
   ],
+  serverSpecific: true,
   channelIndependent: true,
   callback: handleBan,
 };

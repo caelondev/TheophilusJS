@@ -1,5 +1,9 @@
-const { Client, Interaction, ApplicationCommandOptionType } = require("discord.js");
-const User = require("../../models/User")
+const {
+  Client,
+  Interaction,
+  ApplicationCommandOptionType,
+} = require("discord.js");
+const User = require("../../models/User");
 
 /**
  * @param {Interaction} interaction
@@ -21,13 +25,20 @@ const handleBalance = async (client, interaction) => {
 
   try {
     // Fetch user data from DB
-    const userData = await User.findOne({ guildId: interaction.guild.id, userId: userOpt.id });
+    const userData = await User.findOne({
+      guildId: interaction.guild.id,
+      userId: userOpt.id,
+    });
     const balance = userData?.balance || 0;
 
-    await interaction.editReply(`💰 ${userOpt.id !== interaction.member.id ? `**${userOpt.tag}**'s` : `Your`} balance is: **${balance}**`);
+    await interaction.editReply(
+      `💰 ${userOpt.id !== interaction.member.id ? `**${userOpt.tag}**'s` : `Your`} balance is: **${balance}**`,
+    );
   } catch (error) {
     console.log(error);
-    await interaction.editReply(`❌ An error occurred while fetching the balance.`);
+    await interaction.editReply(
+      `❌ An error occurred while fetching the balance.`,
+    );
   }
 };
 
@@ -38,9 +49,10 @@ module.exports = {
     {
       name: "user",
       description: "The user you want to check",
-      type: ApplicationCommandOptionType.User
-    }
+      type: ApplicationCommandOptionType.User,
+    },
   ],
   cooldown: 5000,
-  callback: handleBalance
+  serverSpecific: true,
+  callback: handleBalance,
 };
