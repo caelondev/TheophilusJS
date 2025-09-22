@@ -59,7 +59,6 @@ module.exports = {
       required: true,
     },
   ],
-  // ⚠️ Typo fix: should be Administrator, not Adminstrator
   permissionsRequired: [PermissionFlagsBits.Administrator],
   serverSpecific: true,
   debugger: true,

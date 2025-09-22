@@ -29,7 +29,7 @@ module.exports = async (client, interaction) => {
     })
 
     // ✅ Bot channel restriction check
-    if (botConfig && interaction.channel.id !== botConfig.channelId && !commandObject.debugger) {
+    if (botConfig && interaction.channel.id !== botConfig.channelId && !commandObject.debugger && !commandObject.channelIndependent) {
       const botChannel = interaction.guild.channels.cache.get(
         botConfig.channelId,
       );

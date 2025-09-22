@@ -55,5 +55,6 @@ module.exports = {
   description: "Disable auto-role in this server.",
   permissionsRequired: [PermissionFlagsBits.Administrator],
   serverSpecific: true,
+  channslIndependent: true,
   callback: handleDisableAutorole,
 };

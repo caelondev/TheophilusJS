@@ -65,6 +65,6 @@ module.exports = {
   ],
   permissionsRequired: [PermissionFlagsBits.Administrator],
   serverSpecific: true,
-  debugger: true,
+  channelIndependent: true,
   callback: handleBotConfigureChannel,
 };

@@ -12,17 +12,20 @@ const {
  */
 const handleKick = async (client, interaction) => {
   const targetUserId = interaction.options.get("target-user").value;
-  const reason = interaction.options.get("reason")?.value || "No reason provided";
+  const reason =
+    interaction.options.get("reason")?.value || "No reason provided";
 
   await interaction.deferReply();
 
   // Fetch the target member
-  const targetUser = await interaction.guild.members.fetch(targetUserId).catch(() => null);
+  const targetUser = await interaction.guild.members
+    .fetch(targetUserId)
+    .catch(() => null);
 
   if (!targetUser) {
     return interaction.editReply({
       content: "❌ That user doesn't exist in this server.",
-      flags: MessageFlags.Ephemeral
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -30,7 +33,7 @@ const handleKick = async (client, interaction) => {
   if (targetUser.id === interaction.guild.ownerId) {
     return interaction.editReply({
       content: "❌ Cannot kick the server owner.",
-      flags: MessageFlags.Ephemeral
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -41,21 +44,23 @@ const handleKick = async (client, interaction) => {
   // Check role hierarchy
   if (targetRolePosition >= requesterRolePosition) {
     return interaction.editReply({
-      content: "❌ You cannot kick this user because they have the same or higher role than you.",
-      flags: MessageFlags.Ephemeral
+      content:
+        "❌ You cannot kick this user because they have the same or higher role than you.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   if (targetRolePosition >= botRolePosition) {
     return interaction.editReply({
-      content: "❌ I cannot kick this user because they have the same or higher role than me.",
-      flags: MessageFlags.Ephemeral
+      content:
+        "❌ I cannot kick this user because they have the same or higher role than me.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   // Attempt to kick the user
   try {
-    await targetUser.kick({ reason })
+    await targetUser.kick({ reason });
     await interaction.editReply({
       content: `✅ Successfully kicked **${targetUser.user.tag}**\n\n**Reason:** ${reason}`,
     });
@@ -63,7 +68,7 @@ const handleKick = async (client, interaction) => {
     console.error(error);
     await interaction.editReply({
       content: "❌ An error occurred while trying to kick the user.",
-      flags: MessageFlags.Ephemeral
+      flags: MessageFlags.Ephemeral,
     });
   }
 };
@@ -92,6 +97,6 @@ module.exports = {
     PermissionFlagsBits.Administrator,
     PermissionFlagsBits.KickMembers,
   ],
+  channelIndependent: true,
   callback: handleKick,
 };
-

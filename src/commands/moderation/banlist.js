@@ -8,7 +8,7 @@ const {
   Message,
 } = require("discord.js");
 const { description, callback } = require("./ban");
-const drawLine = require("../../utils/drawLine")
+const drawLine = require("../../utils/drawLine");
 
 /**
  * @param {Client} client
@@ -35,7 +35,7 @@ const handleBanlist = async (client, interaction) => {
     for (const data of banlistObj.values()) {
       const getUser = await client.users.fetch(data.user);
       const userTag = getUser.tag;
-      const reason = data.reason || "No reason provided."
+      const reason = data.reason || "No reason provided.";
 
       output += `• **${data.user}** / **${userTag}** — **${reason}**\n`;
     }
@@ -53,6 +53,11 @@ const handleBanlist = async (client, interaction) => {
 module.exports = {
   name: "banlist",
   description: "Lists all banned users.",
+  channelIndependent: true,
   callback: handleBanlist,
-  permissionsRequired: [PermissionFlagsBits.Administrator, PermissionFlagsBits.ModerateMembers, PermissionFlagsBits.BanMembers]
+  permissionsRequired: [
+    PermissionFlagsBits.Administrator,
+    PermissionFlagsBits.ModerateMembers,
+    PermissionFlagsBits.BanMembers,
+  ],
 };

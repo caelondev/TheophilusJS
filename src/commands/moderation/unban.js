@@ -1,4 +1,3 @@
-
 const {
   ApplicationCommandOptionType,
   PermissionFlagsBits,
@@ -20,23 +19,25 @@ const handleUnban = async (client, interaction) => {
   const guild = client.guilds.cache.get(interaction.guildId);
   const banlist = await guild.bans.fetch();
 
-  const bannedUser = banlist.find(b => b.user.tag === userTag);
+  const bannedUser = banlist.find((b) => b.user.tag === userTag);
 
   if (!bannedUser) {
     return interaction.editReply({
       content: `❌ **${userTag}** is not banned.`,
-      flags: MessageFlags.Ephemeral
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   try {
     await guild.members.unban(bannedUser.user.id);
-    await interaction.editReply(`✅ **${userTag}** has been successfully unbanned.`);
+    await interaction.editReply(
+      `✅ **${userTag}** has been successfully unbanned.`,
+    );
   } catch (error) {
     console.error(error);
     await interaction.editReply({
       content: "❌ Failed to unban this user.",
-      flags: MessageFlags.Ephemeral
+      flags: MessageFlags.Ephemeral,
     });
   }
 };
@@ -49,10 +50,17 @@ module.exports = {
       name: "user-tag",
       description: "The tag of the user to unban (e.g., User#1234)",
       type: ApplicationCommandOptionType.String,
-      required: true
-    }
+      required: true,
+    },
   ],
-  permissionsRequired: [PermissionFlagsBits.Administrator, PermissionFlagsBits.BanMembers],
-  botPermissionsRequired: [PermissionFlagsBits.Administrator, PermissionFlagsBits.BanMembers],
-  callback: handleUnban
-}
+  channelIndependent: true,
+  permissionsRequired: [
+    PermissionFlagsBits.Administrator,
+    PermissionFlagsBits.BanMembers,
+  ],
+  botPermissionsRequired: [
+    PermissionFlagsBits.Administrator,
+    PermissionFlagsBits.BanMembers,
+  ],
+  callback: handleUnban,
+};
