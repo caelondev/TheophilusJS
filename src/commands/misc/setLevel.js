@@ -65,7 +65,7 @@ const handleSetLevel = async(client, interaction) => {
 };
 
 module.exports = {
-  name: "setlevel",
+  name: "set-level",
   description: "Manually set a member's level.",
   options: [
     {

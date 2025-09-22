@@ -14,10 +14,7 @@ const API_URL = "https://rapido.zetsu.xyz/api/quote";
  * @param {Client} client
  * @param {Interaction} interaction
  */
-const handleLyrics = async (client, interaction) => {
-  const song = interaction.options.getString("song");
-  const artist = interaction.options.getString("artist");
-
+const handleQuote = async (client, interaction) => {
   if (cooldownUsers.has(interaction.user.id)) {
     return interaction.reply({
       content:
@@ -62,5 +59,5 @@ module.exports = {
   name: "quote",
   description: "Sends a random quote.",
   serverSpecific: true,
-  callback: handleLyrics,
+  callback: handleQuote,
 };

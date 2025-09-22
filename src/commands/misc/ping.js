@@ -19,5 +19,6 @@ const handlePing = async(client, interaction)=>{
 module.exports = {
   name: "ping",
   description: "Pong!",
+  cooldown: 5000,
   callback: handlePing
 };

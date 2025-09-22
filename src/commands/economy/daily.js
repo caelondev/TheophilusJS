@@ -62,6 +62,7 @@ const handleDaily = async (client, interaction) => {
 module.exports = {
   name: 'daily',
   description: 'Collect your daily reward!',
+  cooldown: 5000,
   serverSpecific: true,
   callback: handleDaily,
 };

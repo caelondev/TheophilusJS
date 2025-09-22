@@ -31,7 +31,7 @@ const handleBotConfigureChannel = async (client, interaction) => {
 
     // Final response (no flags needed here)
     await interaction.editReply(
-      `✅ Successfully set bot's channel to ${botChannelOpt}.`
+      `✅ Successfully set bot's channel to ${botChannelOpt}.`,
     );
   } catch (error) {
     console.error(error);
@@ -39,7 +39,7 @@ const handleBotConfigureChannel = async (client, interaction) => {
     // Safe fallback response
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(
-        "❌ An error occurred while configuring the bot's channel. Please try again later..."
+        "❌ An error occurred while configuring the bot's channel. Please try again later...",
       );
     } else {
       await interaction.reply({

@@ -98,5 +98,6 @@ module.exports = {
       required: true
     }
   ],
+  cooldown: 5000,
   callback: handleGiveCoins
 };

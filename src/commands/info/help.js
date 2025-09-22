@@ -8,7 +8,6 @@ const {
 } = require("discord.js");
 const getAllFiles = require("../../utils/getAllFiles");
 const path = require("path");
-const { serverSpecific } = require("./quote");
 
 const CMD_PER_PAGE = 10;
 
@@ -223,5 +222,6 @@ module.exports = {
       type: ApplicationCommandOptionType.String,
     },
   ],
+  cooldown: 5000,
   callback: handleHelp,
 };

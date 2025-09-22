@@ -368,7 +368,8 @@ module.exports = {
       type: ApplicationCommandOptionType.String,  
       required: true,  
     },  
-  ],  
+  ],
+  cooldown: 5000,
   serverSpecific: true,  
   callback: handleSteal,  
 };

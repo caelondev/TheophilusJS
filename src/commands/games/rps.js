@@ -329,6 +329,7 @@ module.exports = {
       required: false,
     },
   ],
+  cooldown: 10_000,
   serverSpecific: true,
   callback: handleRockPaperScissors,
 };

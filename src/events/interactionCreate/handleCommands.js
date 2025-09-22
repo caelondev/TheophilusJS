@@ -4,6 +4,8 @@ const { MessageFlags } = require("discord.js");
 const getLocalCommands = require("../../utils/getLocalCommands");
 const BotConfig = require("../../models/BotConfig");
 
+const cooldown = new Set()
+
 module.exports = async (client, interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -19,6 +21,12 @@ module.exports = async (client, interaction) => {
     const botConfig = await BotConfig.findOne({
       guildId: interaction.guild.id,
     });
+
+
+    if(cooldown.has(interaction.user.id) && !commandObject.testOnly) return interaction.reply({
+      content: "You're on cooldown! Please wait a few seconds before using this command again.",
+      flags: MessageFlags.Ephemeral
+    })
 
     // ✅ Bot channel restriction check
     if (botConfig && interaction.channel.id !== botConfig.channelId && !commandObject.debugger) {
@@ -95,8 +103,10 @@ module.exports = async (client, interaction) => {
       }
     }
 
-    // 🚀 Execute command normally
     await commandObject.callback(client, interaction);
+    cooldown.add(interaction.user.id)
+
+    setTimeout(()=>{cooldown.delete(interaction.user.id)}, commandObject?.cooldown || 0)
   } catch (error) {
     console.log(`⚠️ There was an error running this command: ${error}`);
   }

@@ -41,5 +41,6 @@ module.exports = {
       type: ApplicationCommandOptionType.User
     }
   ],
+  cooldown: 5000,
   callback: handleBalance
 };

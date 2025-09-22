@@ -100,7 +100,7 @@ const handleRank = async (client, interaction) => {
 module.exports = {
   name: "rank",
   description: "Shows the server's level leaderboard (top 10 users).",
-  options: [],
+  cooldown: 10_000,
   serverSpecific: true,
   callback: handleRank,
 };

@@ -83,6 +83,7 @@ module.exports = {
       type: ApplicationCommandOptionType.User,
     },
   ],
+  cooldown: 10_000,
   serverSpecific: true,
   callback: handleLevel,
 };

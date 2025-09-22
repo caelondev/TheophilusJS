@@ -381,6 +381,7 @@ module.exports = {
       required: true,
     },
   ],
+  cooldown: 10_000,
   serverSpecific: true,
   callback: handleCoinToss,
 };

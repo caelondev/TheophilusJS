@@ -6,8 +6,6 @@ const {
   MessageFlags,
 } = require("discord.js");
 
-const cooldownUsers = new Set();
-
 const filterData = (results, song, artist) => {
   if (!results || results.length === 0) return [];
 
@@ -38,14 +36,6 @@ const filterData = (results, song, artist) => {
 const handleLyrics = async (client, interaction) => {
   const song = interaction.options.getString("song");
   const artist = interaction.options.getString("artist");
-
-  if (cooldownUsers.has(interaction.user.id)) {
-    return interaction.reply({
-      content:
-        "⏳ You're on cooldown! Please wait a few seconds before using this command again.",
-      flags: MessageFlags.Ephemeral,
-    });
-  }
 
   try {
     await interaction.deferReply();
@@ -89,11 +79,6 @@ const handleLyrics = async (client, interaction) => {
       });
     }
 
-    cooldownUsers.add(interaction.user.id);
-
-    setTimeout(() => {
-      cooldownUsers.delete(interaction.user.id);
-    }, 5000);
   } catch (error) {
     console.error(error);
     interaction.editReply("An error occurred whilst processing your response.");
@@ -116,6 +101,7 @@ module.exports = {
       type: ApplicationCommandOptionType.String,
     },
   ],
+  cooldown: 10_000,
   serverSpecific: true,
   callback: handleLyrics,
 };

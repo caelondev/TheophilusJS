@@ -5,8 +5,6 @@ const {
   MessageFlags,
 } = require("discord.js");
 
-const cooldown = new Set();
-
 /**
  * @param {Client} client
  * @param {Interaction} interaction
@@ -14,22 +12,8 @@ const cooldown = new Set();
 const handleSay = async (client, interaction) => {
   const prompt = interaction.options.getString("prompt");
 
-  if (cooldown.has(interaction.user.id)) {
-    return interaction.reply({
-      content:
-        "⏳ You're on cooldown! Please wait a few seconds before using this command again.",
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
   try {
     await interaction.reply(prompt);
-
-    cooldown.add(interaction.user.id);
-
-    setTimeout(() => {
-      cooldown.delete(interaction.user.id);
-    }, 5000);
   } catch (error) {
     console.error(error);
   }
@@ -46,5 +30,6 @@ module.exports = {
       required: true,
     },
   ],
+  cooldown: 5000,
   callback: handleSay,
 };
