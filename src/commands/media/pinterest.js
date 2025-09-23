@@ -23,7 +23,7 @@ const getEmbedsArray = (json, query, interaction)=>{
     )
   }
 
-  embedsArray[0].setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.avatarURL() }).setTitle(capitalizeFirstLetter(query).setDescription(`images Related to "${query}"`)
+  embedsArray[0].setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.avatarURL() }).setTitle(capitalizeFirstLetter(query)).setDescription(`images Related to "${query}"`)
   return embedsArray
 }
 
