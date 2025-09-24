@@ -16,14 +16,15 @@ module.exports = async (client, message) => {
   const userId = message.author.id;
   if (cooldowns.has(userId)) return;
 
-  setTimeout(() => cooldowns.delete(userId), 15_000);
+  setTimeout(() => cooldowns.delete(userId), 60_000);
 
-  try {
-    const greet = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: `You are a multilingual greeting bot made to greet the user back if they greeted you
+  const greetHandler = async (attempt = 0, maxRetries = 3) => {
+    try {
+      const greet = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: `You are a multilingual greeting bot made to greet the user back if they greeted you
 
 Here are your rules for replying:
 1. If the user prompt is NOT a greet, EXACTLY say 'NO_GREETING'.
@@ -35,38 +36,47 @@ Here are your rules for replying:
 7. Be creative wih your response
 
 STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
-        },
-        {
-          role: "user",
-          content: message.content,
-        },
-      ],
-      model: "openai/gpt-oss-20b",
-      max_completion_tokens: 300,
-      temperature: 0.2,
-    });
+          },
+          {
+            role: "user",
+            content: message.content,
+          },
+        ],
+        model: "openai/gpt-oss-20b",
+        max_completion_tokens: 300,
+        temperature: 0.2,
+      });
 
-   const response =
-      greet.choices?.[0]?.message?.content?.trim() ||
-      greet.choices?.[0]?.text?.trim() ||
-      "";
+      const response =
+        greet.choices?.[0]?.message?.content?.trim() ||
+        greet.choices?.[0]?.text?.trim() ||
+        "";
 
+      if (response && response !== "NO_GREETING") await message.reply(capitalizeFirstLetter(response));
 
-    if (response && response !== "NO_GREETING") {
-      await message.reply(capitalizeFirstLetter(response));
       cooldowns.add(userId);
-    }
-  } catch (error) {
-    console.log("Groq API Error:", error);
+    } catch (error) {
+      console.log("Groq API Error:", error);
 
-    // Fallback for rate limits or errors
-    if (error.message?.includes("rate_limit_exceeded")) {
-      console.log("Rate limit hit - using simple fallback");
-      const greetingPattern =
-        /^(hi|hello|hey|good morning|good evening|sup|yo)\b/i;
-      if (greetingPattern.test(message.content.trim())) {
-        await message.reply(`Hello <@${message.author.id}>! 👋`);
+      const retryAfter = error?.headers?.["retry-after"];
+      if (retryAfter && attempt < maxRetries) {
+        const waitMs = Number(retryAfter) * 1000 || 1000;
+        console.log(`Rate limit hit, retrying in ${waitMs}ms (attempt ${attempt + 1})`);
+        await new Promise((r) => setTimeout(r, waitMs));
+        return greetHandler(attempt + 1, maxRetries);
+      }
+
+      if (error.message?.includes("rate_limit_exceeded") || attempt >= maxRetries) {
+        console.log("Rate limit hit - using simple fallback");
+        const greetingPattern =
+          /^(hi|hello|hey|good morning|good evening|sup|yo)\b/i;
+        if (greetingPattern.test(message.content.trim())) {
+          await message.reply(`Hello <@${message.author.id}>! 👋`);
+        }
       }
     }
-  }
+  };
+
+  // Run handler
+  greetHandler();
 };
