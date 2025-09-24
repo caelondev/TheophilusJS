@@ -1,5 +1,7 @@
-// starts the bot
-require("./src/init.js")
+async function createBot(){
+  await require("./src/init.js")()
 
-// create pinger dashboard 
-require("./src/pinger.js")
+  await require("./src/pinger.js")
+}
+
+createBot()

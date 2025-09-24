@@ -9,16 +9,21 @@ module.exports = (exeptions = []) => {
     true,
   );
 
-  for(commandCategory of commandCategories){
-    const commandFiles = getAllFiles(commandCategory)
-    for (const commandFile of commandFiles){
-      const commandObject = require(commandFile)
-      
-      if(exeptions.includes(commandObject.name)){
-        continue
+  for (const commandCategory of commandCategories) {
+    // Filter to only .js files
+    const commandFiles = getAllFiles(commandCategory).filter(file => file.endsWith(".js"));
+
+    for (const commandFile of commandFiles) {
+      const commandObject = require(commandFile);
+
+      if (!commandObject.name || !commandObject.description) {
+        console.warn(`⚠️ Skipping invalid command in ${commandFile}`);
+        continue;
       }
 
-      localCommands.push(commandObject)
+      if (exeptions.includes(commandObject.name)) continue;
+
+      localCommands.push(commandObject);
     }
   }
 
