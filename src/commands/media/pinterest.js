@@ -8,25 +8,11 @@ const {
 } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
 const capitalizeFirstLetter = require("../../utils/capitalizeFirstLetter");
+const downloadFile = require("../../utils/downloadFile");
 
 const deleteFiles = (files) => {
   for (const file of files) fs.unlink(file, () => {});
-};
-
-const downloadImage = async (url, saveDir) => {
-  const fileName = url.split("/").pop();
-  const savePath = path.join(saveDir, fileName);
-  await fs.promises.mkdir(saveDir, { recursive: true });
-  const response = await axios({ url, method: "GET", responseType: "stream" });
-  const writer = fs.createWriteStream(savePath);
-  response.data.pipe(writer);
-
-  return new Promise((resolve, reject) => {
-    writer.on("finish", () => resolve(savePath));
-    writer.on("error", reject);
-  });
 };
 
 const handlePinterest = async (client, interaction) => {
@@ -77,8 +63,13 @@ const handlePinterest = async (client, interaction) => {
     for (let i = 0; i < images.length; i++) {
       embed.setDescription(`Downloading image **${i + 1} of ${images.length}**...`);
       await interaction.editReply({ embeds: [embed] });
-      const filePath = await downloadImage(images[i], cacheDir);
-      downloadedFiles.push(filePath);
+
+      const fileName = path.basename(images[i]);
+      const filePath = path.join(cacheDir, fileName);
+      await fs.promises.mkdir(cacheDir, { recursive: true });
+
+      const savedPath = await downloadFile(images[i], filePath);
+      downloadedFiles.push(savedPath);
     }
 
     // Select random thumbnail and copy
@@ -103,8 +94,8 @@ const handlePinterest = async (client, interaction) => {
           )
           .setThumbnail(`attachment://${path.basename(thumbnailCopyPath)}`);
 
-        // Add thumbnail if batch has space
-        if (attachments.length < 10) attachments.push(new AttachmentBuilder(thumbnailCopyPath));
+        if (attachments.length < 10)
+          attachments.push(new AttachmentBuilder(thumbnailCopyPath));
 
         await interaction.editReply({ embeds: [embedCopy], files: attachments });
       } else {

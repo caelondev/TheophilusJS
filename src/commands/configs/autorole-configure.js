@@ -4,42 +4,41 @@ const {
   ApplicationCommandOptionType,
   PermissionFlagsBits,
 } = require("discord.js");
-const BotConfig = require("../../models/BotConfig");
+const AutoRole = require("../../models/AutoRole");
 
 /**
  * @param {Client} client
  * @param {ChatInputCommandInteraction} interaction
  */
-const handleBotConfigureChannel = async (client, interaction) => {
+const handleAutoRoleConfigure = async (client, interaction) => {
   try {
-    // Defer immediately (ephemeral works here)
+    // Defer the reply (ephemeral)
     await interaction.deferReply({ ephemeral: true });
 
-    const botChannelOpt = interaction.options.getChannel("channel");
+    const roleOpt = interaction.options.getRole("role");
 
-    // Fetch or create config
-    let botConfig = await BotConfig.findOne({ guildId: interaction.guild.id });
-    if (!botConfig) {
-      botConfig = new BotConfig({ guildId: interaction.guild.id });
+    // Fetch or create autorole config
+    let autoRoleConfig = await AutoRole.findOne({
+      guildId: interaction.guild.id,
+    });
+    if (!autoRoleConfig) {
+      autoRoleConfig = new AutoRole({ guildId: interaction.guild.id });
     }
 
-    // Update values
-    botConfig.channelId = botChannelOpt.id;
-    botConfig.channelName = botChannelOpt.name;
+    autoRoleConfig.roleId = roleOpt.id;
 
-    await botConfig.save();
+    await autoRoleConfig.save();
 
-    // Final response (no flags needed here)
+    // Final response
     await interaction.editReply(
-      `✅ Successfully set bot's channel to ${botChannelOpt}.`,
+      `✅ Successfully set the autorole to **${roleOpt.name}**.`,
     );
   } catch (error) {
     console.error(error);
 
-    // Safe fallback response
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(
-        "❌ An error occurred while configuring the bot's channel. Please try again later...",
+        "❌ An error occurred while setting the autorole. Please try again later...",
       );
     } else {
       await interaction.reply({
@@ -52,19 +51,18 @@ const handleBotConfigureChannel = async (client, interaction) => {
 };
 
 module.exports = {
-  name: "bot-channel-configure",
-  description: "Configure your bot channel",
+  name: "autorole-set",
+  description: "Set the autorole for new members",
   options: [
     {
-      name: "channel",
-      description:
-        "The channel you want to use as a bot channel exclusively for TheophilusJS.",
-      type: ApplicationCommandOptionType.Channel,
+      name: "role",
+      description: "The role to assign automatically to new members",
+      type: ApplicationCommandOptionType.Role,
       required: true,
     },
   ],
   permissionsRequired: [PermissionFlagsBits.Administrator],
   serverSpecific: true,
   channelIndependent: true,
-  callback: handleBotConfigureChannel,
+  callback: handleAutoRoleConfigure,
 };
