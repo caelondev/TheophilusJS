@@ -3,6 +3,7 @@ const { Client, Message } = require("discord.js");
 const cooldowns = new Set();
 const Groq = require("groq-sdk");
 const capitalizeFirstLetter = require("../../utils/capitalizeFirstLetter");
+const BotConfig = require("../../models/BotConfig");
 
 const groq = new Groq({ apiKey: process.env.GROQ_KEY });
 
@@ -20,6 +21,12 @@ module.exports = async (client, message) => {
 
   const greetHandler = async (attempt = 0, maxRetries = 3) => {
     try {
+      let botConfig = await BotConfig.findOne({ guildId: message.guild.id });
+
+      if (!botConfig)
+        botConfig = await new BotConfig({ guildId: message.guild.id });
+      if (!botConfig.autoMessagesEnabled) return;
+
       const greet = await groq.chat.completions.create({
         messages: [
           {
@@ -52,7 +59,8 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
         greet.choices?.[0]?.text?.trim() ||
         "";
 
-      if (response && response !== "NO_GREETING") await message.reply(capitalizeFirstLetter(response));
+      if (response && response !== "NO_GREETING")
+        await message.reply(capitalizeFirstLetter(response));
 
       cooldowns.add(userId);
     } catch (error) {
@@ -61,12 +69,17 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
       const retryAfter = error?.headers?.["retry-after"];
       if (retryAfter && attempt < maxRetries) {
         const waitMs = Number(retryAfter) * 1000 || 1000;
-        console.log(`Rate limit hit, retrying in ${waitMs}ms (attempt ${attempt + 1})`);
+        console.log(
+          `Rate limit hit, retrying in ${waitMs}ms (attempt ${attempt + 1})`,
+        );
         await new Promise((r) => setTimeout(r, waitMs));
         return greetHandler(attempt + 1, maxRetries);
       }
 
-      if (error.message?.includes("rate_limit_exceeded") || attempt >= maxRetries) {
+      if (
+        error.message?.includes("rate_limit_exceeded") ||
+        attempt >= maxRetries
+      ) {
         console.log("Rate limit hit - using simple fallback");
         const greetingPattern =
           /^(hi|hello|hey|good morning|good evening|sup|yo)\b/i;

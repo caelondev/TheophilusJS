@@ -12,6 +12,10 @@ const botConfigSchema = new Schema({
     type: String,
     default: "", // will be filled at runtime if empty
   },
+  autoMessagesEnabled: {
+    type: Boolean,
+    default: true
+  },
 });
 
 module.exports = model("BotConfig", botConfigSchema);
