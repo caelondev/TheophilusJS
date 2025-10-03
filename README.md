@@ -60,11 +60,12 @@ npm install
 ```
 
 ### 3. Environment Setup
-Create a `.env` file in the root directory and add your bot token:
+Create a `.env` file in the root directory and add your secret keys:
 ```env
 DISCORD_TOKEN=your_bot_token_here
 MONGODB_URI=your_mongodb_cluster_uri_here
 GROQ_KEY=your_groq_api_key_here
+TENOR_KEY=your_tenor_api_key_here
 ```
 
 ### 4. Configure the Bot
@@ -96,6 +97,7 @@ node index.js
 | `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `1234567890987654321` |
 | `MONGODB_URI` | Your MongoDB cluster (stored in `.env`) | `MONGODB_URI="mongodb://username:password@host:port/database"`
 | `GROQ_KEY` | Your Groq key (stored in `.env`) | N/A |
+| `TENOR_KEY` | Your Tenor API key (stored in `.env`) | N/A
 | `devs` | Array of Discord user IDs with admin privileges | `["123456789012345678", "098765432123456789"]` |
 
 ### Example Configuration

@@ -1,11 +1,11 @@
-const { Client, Interaction } = require("discord.js")
+const { client, interaction } = require("discord.js");
 
 /**
- * @param {Client} client
- * @param {Interaction} interaction
+ * @param {client} client
+ * @param {interaction} interaction
  */
 
-const handlePing = async(client, interaction)=>{
+const handlePing = async (client, interaction) => {
   await interaction.deferReply();
   const reply = await interaction.fetchReply();
   const ping = reply.createdTimestamp - interaction.createdTimestamp;
@@ -13,12 +13,11 @@ const handlePing = async(client, interaction)=>{
   interaction.editReply(
     `Pong! Client: **${ping}ms** | Websocket: **${client.ws.ping}ms**`,
   );
-}
-
+};
 
 module.exports = {
   name: "ping",
   description: "Pong!",
   cooldown: 5000,
-  callback: handlePing
+  callback: handlePing,
 };
