@@ -42,7 +42,8 @@ const getCompatibilityGif = async (compatibility) => {
 };
 
 const getCompatibility = (user1Id, user2Id) => {
-  const hash = crypto.createHash("md5").update(user1Id + user2Id).digest("hex");
+  const idSum = BigInt(user1Id) + BigInt(user2Id);
+  const hash = crypto.createHash("md5").update(idSum.toString()).digest("hex");
   return parseInt(hash.slice(0, 4), 16) % 101;
 };
 
@@ -79,7 +80,7 @@ const handleShip = async (client, interaction) => {
 
     shipEmbed
       .setAuthor({
-        name: `Shipped by ${interaction.user.username}`,
+        name: `Shipped by ${interaction.user.displayName}`,
         iconURL: interaction.user.avatarURL() || undefined,
       })
       .setTitle(compatibilityMessage)
