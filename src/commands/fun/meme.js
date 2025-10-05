@@ -121,7 +121,8 @@ const handleMeme = async (client, interaction) => {
       .setTitle(`Meme from r/${json.subreddit}`)
       .setDescription(formattedDescription)
       .setAuthor({ name: `Posted by ${json.author}` })
-      .setImage(`attachment://${memePath.split("/").pop()}`);
+      .setImage(`attachment://${memePath.split("/").pop()}`)
+      .setURL(json.postLink)
 
     await interaction.editReply({
       embeds: [memeEmbed],

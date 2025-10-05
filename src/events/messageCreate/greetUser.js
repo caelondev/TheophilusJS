@@ -90,6 +90,5 @@ STARTING FROM NOW, REPLY 'NO_GREETING' IF THE USER'S PROMPT IS NOT A GREET.`,
     }
   };
 
-  // Run handler
   greetHandler();
 };
