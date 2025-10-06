@@ -5,70 +5,120 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ComponentType
+  ComponentType,
+  ApplicationCommandOptionType,
+  MessageFlags
 } = require("discord.js")
 
-const questionPrompt = async (resolve, reject, interaction, jokeEmbed, json) => {
-  const jokeFlags = []
-  if (json.flags && typeof json.flags === "object") {
-    for (const [key, value] of Object.entries(json.flags)) {
-      if (value) jokeFlags.push(key)
-    }
+const getJokeFlags = (json)=>{
+  if(json.safe) return
+
+  const flags = []
+
+  for(const [key, value] of Object.entries(json.flags)){
+    if(value) flags.push(key)
   }
 
-  const warningText =
-    jokeFlags.length > 0
-      ? `This joke is flagged as **[${jokeFlags.join(", ")}]**, Category: **${json.category}**`
-      : `This joke has no specific flags but is still **unsafe**.`
-
-  jokeEmbed
-    .setColor("DarkButNotBlack")
-    .setDescription(`**Warning:** Unsafe joke.\n${warningText}\n\nDo you wish to continue?`)
-
-  const questionButtons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("joke-continue")
-      .setLabel("Continue")
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId("joke-exit")
-      .setLabel("Exit")
-      .setStyle(ButtonStyle.Danger)
-  )
-
-  const answer = await interaction.editReply({
-    embeds: [jokeEmbed],
-    components: [questionButtons]
-  })
-
-  const collector = answer.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 300_000 // 5m
-  })
-
-  collector.on("collect", async (interact) => {
-    if (interact.user.id !== interaction.user.id) {
-      if (!interact.replied && !interact.deferred) {
-        const errorEmbed = new EmbedBuilder()
-          .setColor("Red")
-          .setDescription("You do not own this session, create your own by typing `/joke`.")
-        return interact.reply({ embeds: [errorEmbed], ephemeral: true })
-      }
-      return
-    }
-
-    if (interact.customId === "joke-exit") {
-      await interact.update({ components: [] })
-      reject(false)
-    } else if (interact.customId === "joke-continue") {
-      await interact.update({ components: [] })
-      resolve(true)
-    }
-  })
+  return flags
 }
 
-const notifyUser = async (interaction, jokeEmbed, json) => {
-  return new Promise((res, rej) => questionPrompt(res, rej, interaction, jokeEmbed, json))
+const notifyUser = async (json, interaction) => {
+  return new Promise(async (resolve, reject) => {
+    const jokeFlags = getJokeFlags(json);
+
+    let notifyMessageDetail = "";
+    if (!jokeFlags || jokeFlags.length === 0) {
+      notifyMessageDetail =
+        "This joke has **no specified flags** but is still marked as **unsafe.** If you continue, it may contain **dark or potentially offensive content**";
+    } else {
+      notifyMessageDetail = `This joke is flagged as **[${jokeFlags.join(", ")}]**`;
+    }
+
+    let notifyMessageToast = `Warning! ${notifyMessageDetail}. Do you wish to continue?`;
+
+    const notificationEmbed = new EmbedBuilder()
+      .setColor("DarkButNotBlack")
+      .setTitle("⚠️ Warning")
+      .setDescription(notifyMessageToast);
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("joke-exit")
+        .setLabel("Exit")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId("joke-continue")
+        .setLabel("Continue")
+        .setStyle(ButtonStyle.Primary),
+    );
+
+    const reply = await interaction.editReply({
+      embeds: [notificationEmbed],
+      components: [row],
+    });
+
+    const collector = reply.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 300_000,
+    });
+
+    collector.on("collect", async (interact) => {
+      const emitter = interact.user;
+      const initializer = interaction.user;
+      if (emitter.id !== initializer.id) {
+        return interact.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor("Red")
+              .setDescription("This is not your `/joke` session."),
+          ],
+          flags: MessageFlags.Ephemeral,
+        })
+      }
+
+      if (interact.customId === "joke-exit") return collector.stop("exit")
+      if (interact.customId === "joke-continue") return resolve();
+    });
+
+    collector.on("end", (_, reason) => {
+      if (reason === "time") return reject("Session timeout");
+      if (reason === "exit") return reject("User rejected the joke");
+    });
+  });
+};
+
+const handleTwoPart = async(json, interaction, jokeEmbed) => {
+  const setup = json.setup
+  const delivery = json.delivery
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("joke-next").setLabel("Show punchline").setStyle(ButtonStyle.Primary)
+  )
+
+  const twopartEmbed = jokeEmbed.setDescription(setup).setTitle(`Category: ${json.category}`)
+  const reply = await interaction.editReply({ embeds: [twopartEmbed], components: [row] })
+  const collector = reply.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 120_000,
+  })      
+  
+  collector.on("collect", async(interact)=>{
+    if(interaction.user.id !== interact.user.id){
+      return interact.reply({
+        embeds: [
+          new EmbedBuilder()
+          .setColor("Red")
+          .setDescription("This is not your `/joke` session."),
+        ],
+        flags: MessageFlags.Ephemeral,
+      })
+    }
+
+    twopartEmbed.setDescription(delivery).setTitle(null)
+    await interaction.editReply({ components: [] })
+    interact.reply({ embeds: [twopartEmbed] })
+  })
+
+  collector.on("end", ()=>{throw new Error("Session timeout")})
 }
 
 /**
@@ -76,6 +126,7 @@ const notifyUser = async (interaction, jokeEmbed, json) => {
  * @param {Interaction} interaction
  */
 const handleJoke = async (client, interaction) => {
+  const category = interaction.options.getString("category") || "Any"
   const jokeEmbed = new EmbedBuilder().setColor("Blurple").setFooter({
     text: `Joke for ${interaction.user.displayName}`,
     iconURL: interaction.user.displayAvatarURL()
@@ -83,48 +134,44 @@ const handleJoke = async (client, interaction) => {
 
   try {
     await interaction.deferReply()
-
-    const response = await fetch(`https://urangkapolka.vercel.app/api/joke`)
-    if (!response.ok) throw new Error("non-200 status code")
+    const response = await fetch(`https://v2.jokeapi.dev/joke/${category}`)
+    
+    if(!response.ok) throw new Error(`non-200 response status code: **${response.status} — ${response.statusText}**`)
 
     const json = await response.json()
-    if (!json) throw new Error("No response found")
+    
+    if(json?.error) throw new Error(json?.additionalInfo)
 
-    let userApproved = true
-    if (!json.safe) {
-      userApproved = await notifyUser(interaction, jokeEmbed, json)
+    if(!json.safe){
+      await notifyUser(json, interaction)
+      jokeEmbed.setColor("DarkButNotBlack")
     }
+    const jokeType = json.type
 
-    if (!userApproved) {
-      jokeEmbed
-        .setDescription(`${interaction.user.displayName} rejected the joke.`)
-        .setColor("White")
-      return interaction.editReply({ embeds: [jokeEmbed], components: [] })
+    if(jokeType === "twopart") await handleTwoPart(json, interaction, jokeEmbed)
+    else if(jokeType === "single"){
+      jokeEmbed.setTitle(`Category: ${json.category}`).setDescription(json.joke)
+      interaction.editReply({ embeds: [jokeEmbed] })
     }
-
-    jokeEmbed.setDescription(json.joke).setTitle(`Category: ${json.category}`)
-    if (!json.safe) jokeEmbed.setColor("DarkButNotBlack")
-
-    await interaction.editReply({ embeds: [jokeEmbed], components: [] })
   } catch (error) {
-    if(error === false){
-      jokeEmbed
-        .setDescription(`${interaction.user.displayName} rejected the joke.`)
-        .setColor("White")
-      return interaction.editReply({ embeds: [jokeEmbed], components: [] })
-    }
-
     jokeEmbed
-      .setDescription("❌ An error occurred whilst fetching a joke")
-      .setColor("Red")
-    await interaction.editReply({ embeds: [jokeEmbed], components: [] })
-    console.error(error)
+      .setTitle("Oops...")
+      .setDescription(error)
+      .setColor("White")
+    return interaction.editReply({ embeds: [jokeEmbed], components: [] })
   }
 }
 
 module.exports = {
   name: "joke",
   description: "Sends a random joke",
+  options: [
+    {
+      name: "category",
+      description: "Joke category",
+      type: ApplicationCommandOptionType.String
+    }
+  ],
   cooldown: 10000,
   callback: handleJoke
 }
