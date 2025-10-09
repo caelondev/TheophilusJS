@@ -1,7 +1,10 @@
 const config = require("../../../config.json");
 const loadedThCommands = require("../../handlers/loadThCommands");
+const BotConfig = require("../../models/BotConfig")
 
 const cooldowns = new Set();
+
+let botConfig
 
 module.exports = async (client, message) => {
   const prefix = config.botSecondaryPrefix;
@@ -12,6 +15,20 @@ module.exports = async (client, message) => {
   try {
     if (message.author.bot) return;
     if (cooldowns.has(message.author.id)) return;
+
+    botConfig = await BotConfig.findOne({ guildId: message.guild.id })
+
+    if (botConfig?.channelId !== message.channel.id && !message.channel.nsfw) {
+      await message.delete().catch(() => {});
+      const botChannel = await client.channels.fetch(botConfig.channelId);
+
+      const reply = await message.channel.send(
+        `You can only use \`${prefix}\` commands in ${botChannel} or in an NSFW channel.`
+      );
+
+      setTimeout(() => reply.delete().catch(() => {}), 5000);
+      return;
+    }
 
     const rawInput = content.slice(prefix.length).trim();
     const tokens = rawInput.split(/\s+/).filter((t) => t.length > 0);
