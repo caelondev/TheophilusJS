@@ -5,7 +5,7 @@ const getAllFiles = require("../utils/getAllFiles");
 
 const COMMANDS_PATH = path.join(__dirname, "..", "commands");
 
-const mergeWithTemplate = (current, template) => {
+const mergeWithTemplate = (current, template)=>{
   for (const key in template) {
     if (!(key in current) || current[key] === "" || current[key] === null || current[key] === undefined) {
       current[key] = template[key];
@@ -16,7 +16,7 @@ const mergeWithTemplate = (current, template) => {
   return current;
 };
 
-const initialize = async () => {
+const main = async () => {
   try {
     const allCategories = getAllFiles(COMMANDS_PATH, true);
     const templatePath = path.join(__dirname, "..", "..", "template", "directory", "category-config.json");
@@ -47,4 +47,6 @@ const initialize = async () => {
   }
 };
 
-module.exports = initialize;
+module.exports = {
+  main
+};

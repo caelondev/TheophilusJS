@@ -33,7 +33,7 @@ const loadHandlers = async(client)=>{
     try {
       const handlerObject = require(handler)
       const handlerName = handler.replace(/\\/g, "/").split("/").pop()
-      await handlerObject(client)
+      await handlerObject.main(client)
       console.log(`💾 Loaded ${handlerName} handler.`)
     } catch(e) {
       console.error("Failed to load handler:", handler, e)

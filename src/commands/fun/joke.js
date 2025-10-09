@@ -151,7 +151,7 @@ const handleJoke = async (client, interaction) => {
     if(jokeType === "twopart") await handleTwoPart(json, interaction, jokeEmbed)
     else if(jokeType === "single"){
       jokeEmbed.setTitle(`Category: ${json.category}`).setDescription(json.joke)
-      interaction.editReply({ embeds: [jokeEmbed] })
+      interaction.editReply({ embeds: [jokeEmbed], components: [] })
     }
   } catch (error) {
     jokeEmbed
