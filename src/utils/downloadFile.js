@@ -3,9 +3,11 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = async (url, img_path) => {
-  const img_name = url.split("/").pop();
+  let img_name = url.split("/").pop();
+
   if (!img_path) {
-    img_path = path.join(__dirname, "..", "commands", "cache", img_name);
+    if (!img_name.endsWith(".png")) img_name += ".png";
+    img_path = path.join(__dirname, "..", "cache", img_name);
   }
 
   try {
@@ -14,7 +16,9 @@ module.exports = async (url, img_path) => {
     return img_path;
   } catch (err) {
     try {
-      await fs.promises.unlink(img_path);
+      if (await fs.promises.stat(img_path)) {
+        await fs.promises.unlink(img_path);
+      }
     } catch (_) {}
     throw err;
   }

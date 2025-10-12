@@ -43,6 +43,7 @@ const getCategorizedCommands = (cmdPath, message) => {
     try {
       const categoryName = path.basename(folder) || "unknown";
       if(categoryName === "dev" && !config.devs.includes(message.author.id)) continue
+      if(categoryName === "nsfw" && !message.channel.nsfw) continue
 
       const files = Array.isArray(getAllFiles(folder)) ? getAllFiles(folder) : [];
       const categoryCommands = [];
