@@ -9,8 +9,8 @@ const {
   MessageFlags,
   AttachmentBuilder,
 } = require("discord.js");
-const downloadFile = require("../../utils/downloadFile");
 const fs = require("fs").promises;
+const downloadFile = require("../../utils/downloadFile");
 
 const getFormattedDescription = (json) => {
   if (!json) throw new Error("No data found...");
