@@ -1,10 +1,24 @@
 const getConfig = require("../../utils/getConfig");
 const { devs, testServers } = getConfig();
-const { MessageFlags } = require("discord.js");
+const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require("discord.js");
 const getLocalCommands = require("../../utils/getLocalCommands");
 const BotConfig = require("../../models/BotConfig");
 
 const cooldown = new Set()
+
+const notifyBetaCommand = async (interaction, commandObject) => {
+  const notificationEmbed = new EmbedBuilder()
+  .setColor("Blurple")
+  .setTimestamp()
+  .setDescription(
+    `⚠️ The command \`/${commandObject.name}\` is currently in **Beta** and may contain bugs.`
+  );
+
+  await interaction.channel.send({
+    embeds: [notificationEmbed],
+    flags: MessageFlags.Ephemeral,
+  });
+};
 
 module.exports = async (client, interaction) => {
   if (!interaction.isChatInputCommand()) return;
@@ -28,7 +42,6 @@ module.exports = async (client, interaction) => {
       flags: MessageFlags.Ephemeral
     })
 
-    // ✅ Bot channel restriction check
     if (botConfig && interaction.channel.id !== botConfig.channelId && !commandObject.debugger && !commandObject.channelIndependent) {
       const botChannel = interaction.guild.channels.cache.get(
         botConfig.channelId,
@@ -51,7 +64,6 @@ module.exports = async (client, interaction) => {
       });
     }
 
-    // 👨‍💻 Developer-only check
     if (commandObject.devOnly && !devs.includes(interaction.member.id)) {
       return interaction.reply({
         content: "🚫 Only developers/admins are allowed to run this command.",
@@ -59,7 +71,6 @@ module.exports = async (client, interaction) => {
       });
     }
 
-    // 🏢 Server-only check
     if (commandObject.serverSpecific && !interaction.inGuild()) {
       return interaction.reply({
         content: "❌ This command can only be used in a server.",
@@ -67,7 +78,6 @@ module.exports = async (client, interaction) => {
       });
     }
 
-    // 🧪 Test-server-only check
     if (commandObject.testOnly) {
       const guildId = interaction.guild?.id;
       if (!guildId || !testServers.includes(guildId)) {
@@ -78,7 +88,6 @@ module.exports = async (client, interaction) => {
       }
     }
 
-    // 🛡️ User permissions check
     if (commandObject.permissionsRequired?.length) {
       for (const permission of commandObject.permissionsRequired) {
         if (!interaction.member.permissions.has(permission)) {
@@ -90,7 +99,6 @@ module.exports = async (client, interaction) => {
       }
     }
 
-    // 🤖 Bot permissions check
     if (commandObject.botPermissions?.length) {
       const bot = interaction.guild.members.me;
       for (const permission of commandObject.botPermissions) {
@@ -102,6 +110,8 @@ module.exports = async (client, interaction) => {
         }
       }
     }
+
+    if(commandObject.beta) await notifyBetaCommand(interaction, commandObject)
 
     await commandObject.callback(client, interaction);
     cooldown.add(interaction.user.id)
