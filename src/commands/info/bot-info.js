@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Interaction, EmbedBuilder } = require("discord.js");
 const si = require("systeminformation")
 const cfl = require("../../utils/capitalizeFirstLetter")
@@ -78,7 +84,7 @@ const getHardwareInfo = async () => {
 
 const handleBotInfo = async (client, interaction) => {
   let infoEmbed = new EmbedBuilder()
-      .setTitle(`${client.user.displayName.toUpperCase()}'s Info.`)
+      .setTitle(`${client.user.displayName}'s Info.`)
       .setFooter({ text: "Data fetching failed" })
   try {
     await interaction.deferReply()
@@ -91,7 +97,7 @@ const handleBotInfo = async (client, interaction) => {
     infoEmbed
       .setDescription(formattedInfoData)
       .setColor(`Blurple`)
-      .setFooter({ text: `${client.user.displayName} by ${owner.displayName}.`, iconURL: owner.avatarURL() || undefined })
+      .setFooter({ text: `TheophilusJS is created by caelondev.`, iconURL: owner.avatarURL() || undefined })
 
     await interaction.editReply({ embeds: [infoEmbed] })
   } catch (error) {

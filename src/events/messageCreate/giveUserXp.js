@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Message } = require("discord.js")
 const Level = require("../../models/Level")
 const calculateLevelXp = require("../../utils/calculateLevelXp")

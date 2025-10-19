@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const crypto = require('crypto');
 
 const ENCRYPTION_KEY = crypto.randomBytes(32);

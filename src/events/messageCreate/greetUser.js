@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 require("dotenv").config();
 const { Client, Message } = require("discord.js");
 const cooldowns = new Set();

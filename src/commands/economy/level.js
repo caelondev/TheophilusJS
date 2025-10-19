@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Interaction, ApplicationCommandOptionType, MessageFlags, AttachmentBuilder } = require("discord.js");
 const Level = require("../../models/Level");
 const { RankCardBuilder, Font } = require("canvacord");

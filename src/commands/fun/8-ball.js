@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Interaction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const getRandom = require("../../utils/getRandom");
 

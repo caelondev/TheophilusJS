@@ -1,8 +1,14 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const mongoose = require("mongoose");
 const path = require("path");
 const getAllFiles = require("../utils/getAllFiles");
 
-const autoMigrator = async()=>{
+const autoMigrator = async () => {
   try {
     console.log("🔄 Starting database auto-migration...");
 
@@ -108,5 +114,5 @@ const autoMigrator = async()=>{
 };
 
 module.exports = {
-  main: autoMigrator
+  main: autoMigrator,
 };

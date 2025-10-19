@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const drawLine = require("../../utils/drawLine")
 
 module.exports = async(client)=>{

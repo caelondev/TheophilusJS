@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Interaction } = require('discord.js');
 const User = require('../../models/User');
 const getRandomRange = require("../../utils/getRandomRange")

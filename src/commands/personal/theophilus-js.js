@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 require("dotenv").config();
 const { Client, Interaction, ApplicationCommandOptionType, MessageFlags } = require("discord.js");
 const Groq = require("groq-sdk");

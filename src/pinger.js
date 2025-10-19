@@ -1,6 +1,11 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const http = require("http");
 
-// change this to the allocation port shown in your Bot-Hosting panel
 const PORT = 21200;  
 
 module.exports = http.createServer((req, res) => {

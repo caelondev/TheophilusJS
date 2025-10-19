@@ -1,66 +1,76 @@
 # TheophilusJS
 
+> **Created by [caelondev](https://github.com/caelondev)**
+
 A feature-rich Discord bot built with Discord.js, designed for seamless deployment and ease of use. TheophilusJS provides essential utility commands while maintaining a simple configuration system that allows users to customize their bot instance through a single configuration file.
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![Discord.js](https://img.shields.io/badge/discord.js-v14-blue)](https://discord.js.org/)
+---
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Configuration](#%EF%B8%8F-configuration)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [Event System Overview](#-event-system-overview)
+- [Command System Overview](#-command-system-overview)
+  - [Slash Command Workflow](#slash-command-workflow)
+  - [Slash Command Example](#slash-command-example-annotated)
+  - [TH Command Workflow](#th-custom-prefixed-command-workflow)
+  - [TH Command Example](#th-command-example-annotated)
+- [Developer Notes & Conventions](#-developer-notes--conventions)
+- [Support & Contributing](#-support--contributing)
+- [License](#-license)
+- [Credits](#-credits)
 
 ---
 
-## Table of Contents
+## ✨ Features
 
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Commands](#commands)
-- [Support](#support)
-- [License](#license)
-- [Credits](#credits)
+- ✅ **Ready-to-Deploy** — Fully functional Discord bot with minimal setup required
+- ✅ **Simple Configuration** — Customize your bot through a single `config.json` file
+- ✅ **Integrated with MongoDB** — Store users' info automatically
+- ✅ **Command System** — Comprehensive command handlers with admin controls
+- ✅ **Event Handling** — Built-in modular Discord event management
+- ✅ **Beginner Friendly** — Easy setup process with clear documentation
+- ✅ **Stable & Reliable** — Built on Discord.js v14 for optimal performance
 
 ---
 
-## Features
-
-✅ **Ready-to-Deploy** - Fully functional Discord bot with minimal setup required  
-✅ **Simple Configuration** - Customize your bot through a single `config.json` file  
-✅ Integrated with MongoDB - Store your users' info automatically
-✅ **Command System** - Comprehensive command handler with admin controls  
-✅ **Event Handling** - Built-in Discord event management  
-✅ **Beginner Friendly** - Easy setup process with clear documentation    
-✅ **Stable & Reliable** - Built on Discord.js v14 for optimal performance
-
----
-
-## Prerequisites
+## 📦 Prerequisites
 
 Before installing TheophilusJS, ensure you have the following:
 
 - **[Node.js](https://nodejs.org/)** v18.0.0 or higher
-- **[npm](https://www.npmjs.com/get-npm)** package manager (included with Node.js)
-- **Discord Bot Token** - [Create a bot application](https://discord.com/developers/applications)
-- Groq API Key - Used for AI logic. Get your key [here](https://console.groq.com)
-- MongoDB Cluster - Create your cluster [here](cloud.mongodb.com)
-- **Discord Server** with appropriate permissions to invite your bot (Administrator permission is recommended)
+- **npm** (comes with Node.js)
+- **[Discord Bot Token](https://discord.com/developers/applications)** — Create a bot application
+- **[Groq API Key](https://console.groq.com)** (used for AI logic)
+- **[MongoDB Cluster](https://cloud.mongodb.com)** — Database connection
+- **Discord Server** with appropriate permissions to invite the bot (Administrator recommended)
 
 ---
 
-## Installation
+## 🚀 Installation
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/caelondev/TheophilusJS.git
 cd TheophilusJS
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Environment Setup
+
 Create a `.env` file in the root directory and add your secret keys:
+
 ```env
 DISCORD_TOKEN=your_bot_token_here
 MONGODB_URI=your_mongodb_cluster_uri_here
@@ -69,110 +79,334 @@ TENOR_KEY=your_tenor_api_key_here
 ```
 
 ### 4. Configure the Bot
-Open `config.json` and customize the settings according to your preferences:
+
+Open `config.json` and customize as needed:
+
 ```json
 {
-  "devs": ["your_discord_user_id"], "NOTE": "devs are refered to as the bot admin(s)",
-  "other_settings": "configure_as_needed"
+  "devs": ["your_discord_user_id"],
+  "testServers": ["1234567890987654321"]
 }
 ```
 
+> ⚠️ **Important:** Only `config.json` should be modified for runtime configuration. Editing implementation files may break the bot.
+
 ### 5. Start the Bot
+
 ```bash
 node index.js
 ```
 
-🎉 **Success!** Your bot should now be online and ready to use in your Discord server.
-
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-> ⚠️ **Important Notice**: Only the `config.json` file should be modified. Editing other files may cause the bot to malfunction or break entirely.
+### Key Settings
 
-### Configurable Settings
+| Setting | Description |
+|---------|-------------|
+| `DISCORD_TOKEN` | Discord bot token (in `.env`) |
+| `MONGODB_URI` | MongoDB connection string (in `.env`) |
+| `GROQ_KEY` | Groq API key (in `.env`) |
+| `TENOR_KEY` | Tenor API key (in `.env`) |
+| `devs` | Array of Discord user IDs with developer/admin privileges |
+| `testServers` | Guild IDs for test-only commands |
 
-| Setting | Description | Example |
-|---------|-------------|---------|
-| `DISCORD_TOKEN` | Your Discord bot token (stored in `.env`) | `1234567890987654321` |
-| `MONGODB_URI` | Your MongoDB cluster (stored in `.env`) | `MONGODB_URI="mongodb://username:password@host:port/database"`
-| `GROQ_KEY` | Your Groq key (stored in `.env`) | N/A |
-| `TENOR_KEY` | Your Tenor API key (stored in `.env`) | N/A
-| `devs` | Array of Discord user IDs with admin privileges | `["123456789012345678", "098765432123456789"]` |
+### Example `config.json`:
 
-### Example Configuration
 ```json
 {
-  "devs": [
-    "123456789012345678",
-    "987654321098765432"
-  ],
-  "testServers": [
-    "1234567890987654321"
-  ]
+  "devs": ["123456789012345678"],
+  "testServers": ["1234567890987654321"]
 }
 ```
 
 ---
 
-## Usage
+## 🎯 Usage
 
-Once your bot is running and invited to your server, you can interact with it using the prefix `/`
+Once your bot is running and invited to your server, you can interact with it using:
 
-### Basic Commands
-- Use `/ping` to ping and check TheophilusJS' latency
-- Admin commands require your Discord ID to be listed in the `devs` array
-- Check the `src/commands/` directory for a complete list of available commands
+- **Slash commands** (`/`) — e.g., `/ping`
+- **Secondary prefix** (configured in `config.json`) — TH commands
 
----
+Admin commands require your Discord ID to be listed in `devs`.
 
-## Commands
-
-All bot commands are organized in the `src/commands/` directory. The bot features a modular command system that supports:
-
-- **Utility Commands** - General-purpose bot functionality
-- **Admin Commands** - Server management and configuration
-- **Fun Commands** - Entertainment and interactive features
+**Check:**
+- `src/commands/` for slash commands
+- `src/commands-th/` for prefixed (TH) commands
 
 ---
 
-## Support
+## 📁 Project Structure
 
-If you encounter any issues or need assistance:
+A simplified view of the repository structure:
 
-1. **Check the Issues** - Browse existing [GitHub Issues](https://github.com/caelondev/TheophilusJS/issues)
-2. **Create an Issue** - Report bugs or request features
-3. **Documentation** - Review this README and inline code comments
+```
+TheophilusJS/
+├─ LICENSE
+├─ README.md
+├─ .env
+├─ config.json
+├─ index.js
+├─ src/
+│  ├─ init.js                      # Starts the bot and executes handlers
+│  ├─ handlers/
+│  │  └─ handleEvents.js           # Loads files under src/events/
+│  ├─ events/
+│  │  ├─ clientReady/
+│  │  │  └─ 01-registerCommands.js # Register slash commands
+│  │  ├─ interactionCreate/
+│  │  │  └─ handleCommands.js      # Slash command handler
+│  │  ├─ messageCreate/
+│  │  │  └─ handleThCommands.js    # Prefixed command handler (TH)
+│  │  └─ <eventType>/
+│  │     ├─ filter-messages.js
+│  │     └─ greet-user.js
+│  ├─ commands/                     # Slash commands
+│  ├─ commands-th/                  # Prefixed commands
+│  ├─ utils/
+│  └─ models/
+└─ package.json
+```
+
+### 📝 Notes:
+
+- `src/handlers/handleEvents.js` is executed by `src/init.js` and scans `src/events/`
+- Event folders match Discord event names (e.g., `messageCreate`, `interactionCreate`, `clientReady`)
+- Files in `src/events/clientReady/` are sorted; numeric prefixes prioritize execution order
 
 ---
 
-## License
+## 🎪 Event System Overview
 
-**Copyright © 2025 caelondev. All rights reserved.**
+1. `src/init.js` boots the app and calls `src/handlers/handleEvents.js`
+2. `handleEvents.js` reads each folder in `src/events/`:
+   - Folder name = Discord event (e.g., `messageCreate`)
+   - Child files export functions that take `(client, ...args)`
+   - Files are executed/registered (order controlled with numeric prefixes)
 
-This software is provided for personal and educational use only. You are permitted to:
-- ✅ Use the software for personal projects
-- ✅ Modify the `config.json` file for customization
-- ✅ Deploy your own instance of the bot
+### Example Event Folder:
 
-You are **NOT** permitted to:
-- ❌ Modify any files other than `config.json`
-- ❌ Distribute modified versions of the software
-- ❌ Create derivative works without explicit permission
-- ❌ Use for commercial purposes
+```
+src/events/messageCreate/
+├─ 01-validateMessage.js
+├─ 02-handleThCommands.js
+└─ 03-logMessages.js
+```
+
+This modular approach lets you add new behaviors by dropping files into the appropriate event folder.
 
 ---
 
-## Credits
+## 🔧 Command System Overview
 
-**Developer**: [caelondev](https://github.com/caelondev)  
+There are **two separate command flows**:
 
-**Discord**: [ryodc_](https://discord.com/users/1264839050427367570)
+### 1️⃣ Slash Commands (`/`)
 
-**Framework**: [Discord.js](https://discord.js.org/)  
+- **Registration:** `src/events/clientReady/01-registerCommands.js`
+- **Runtime handling:** `src/events/interactionCreate/handleCommands.js`
+- **Location:** `src/commands/<category>/<command>.js`
+
+### 2️⃣ TH (Custom Prefixed) Commands
+
+- **Runtime handling:** `src/events/messageCreate/handleThCommands.js`
+- **Location:** `src/commands-th/<category>/<command>.js`
+
+### Important Shared Behaviors:
+
+- ⏱️ **Cooldown:** Both handlers implement per-user cooldowns
+- 🔒 **Ephemeral flags:** Slash handler uses ephemeral replies for errors
+- 📍 **Bot channel enforcement:** Both check `BotConfig.channelId`
+- 🧪 **Dev/test gating:** `devOnly`, `testOnly`, and `serverSpecific` are respected
+- 🔑 **Permissions:** `permissionsRequired` and `botPermissions` are checked
+- 🧪 **Beta notifications:** Beta commands show warnings before executing
+- 🔞 **NSFW whitelist (TH):** TH handler supports NSFW category gating
+
+---
+
+## Slash Command Workflow
+
+### 1. Write Command File
+
+Create at `src/commands/<category>/<command>.js`
+
+### 2. Handler Process
+
+When an interaction arrives, `src/events/interactionCreate/handleCommands.js`:
+
+1. Matches `interaction.commandName` against local commands
+2. Performs checks: cooldowns, botChannel, devOnly, testOnly, permissions
+3. Optionally shows beta notification
+4. Calls `commandObject.callback(client, interaction)`
+
+---
+
+## Slash Command Example (Annotated)
+
+Create this file at `src/commands/utility/ping.js`:
+
+```javascript
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
+module.exports = {
+  // Basic command meta
+  name: "ping",
+  description: "Replies with pong and latency info",
+
+  // Optional flags:
+  // devOnly: true,         // Only allow users in config.devs
+  // testOnly: true,        // Only allow in config.testServers
+  // serverSpecific: true,  // Only usable in a guild
+  // channelIndependent: false, // Ignore bot channel restrictions
+  // beta: true,            // Trigger beta notification before exec
+
+  // Permissions:
+  permissionsRequired: [],   // Array of GuildPermissionStrings
+  botPermissions: [],        // Permissions the bot needs
+
+  // Cooldown in milliseconds
+  cooldown: 3000,
+
+  /**
+   * Callback executed by the slash handler
+   * @param {import("discord.js").Client} client
+   * @param {import("discord.js").Interaction} interaction
+   */
+  callback: async (client, interaction) => {
+    try {
+      const latency = Date.now() - interaction.createdTimestamp;
+      await interaction.reply({ 
+        content: `🏓 Pong! Latency: ${latency}ms` 
+      });
+    } catch (err) {
+      console.error("Error in /ping:", err);
+    }
+  },
+};
+```
+
+---
+
+## TH (Custom Prefixed) Command Workflow
+
+### 1. Create Command File
+
+Create at `src/commands-th/<category>/<command>.js`
+
+### 2. Handler Process
+
+The message handler `src/events/messageCreate/handleThCommands.js`:
+
+1. Validates prefix and channel (bot channel / NSFW rules)
+2. Parses tokens: category, name, args
+3. Loads commands via `loadThCommands`
+4. Validates options and required arguments
+5. Attaches `.value` to each option object
+6. Supports `multiOpt` (merges extra args)
+7. Calls `foundCommand.callback(client, message)`
+
+---
+
+## TH Command Example (Annotated)
+
+Create this file at `src/commands-th/fun/say.js`:
+
+```javascript
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
+module.exports = {
+  name: "say",
+  category: "fun", // Directory: src/commands-th/fun/say.js
+  description: "Echoes the provided message.",
+
+  // Handler will attach `.value` to each option
+  options: [
+    { name: "text", required: true }
+  ],
+
+  // Extra tokens combined into { name: "rest", value: [...] }
+  // multiOpt: true,
+
+  // Only allow devs listed in config.devs
+  // devOnly: true,
+
+  /**
+   * @param {import("discord.js").Client} client
+   * @param {import("discord.js").Message} message
+   */
+  callback: async (client, message) => {
+    // Access option values injected by handler
+    const text = module.exports.options[0].value;
+
+    await message.channel.send(text || "You didn't provide any text!");
+  },
+};
+```
+
+---
+
+## 👨‍💻 Developer Notes & Conventions
+
+- **Author credit:** Keep `Created by caelondev` in project and code headers (required by license)
+- **File prefixes:** Use numeric prefixes (e.g., `01-`, `02-`) in `src/events/*` when execution order matters
+- **Error handling:** Handlers log errors to console. Consider adding centralized error handler utility
+- **Key utilities:**
+  - `getConfig`, `getLocalCommands`, `loadThCommands`
+  - `chunkMessage`
+  - `BotConfig` model, `NSFWUsers` model
+- **Cooldowns:** Both command types use `Set` to hold user IDs during cooldown windows
+- **Bot channel restrictions:** Uses `BotConfig.channelId` to restrict commands
+- **Testing:** Use `testServers` in `config.json` for `testOnly` commands
+- **Permissions:** Use `permissionsRequired` (member perms) and `botPermissions` (bot perms)
+
+---
+
+## 🤝 Support & Contributing
+
+If you encounter issues or want to contribute:
+
+1. **[Check Issues](https://github.com/caelondev/TheophilusJS/issues)** — Browse existing issues
+2. **Create an Issue** — Report bugs or request features with reproduction steps
+3. **Contributions** — Fork the repo, create a branch (`feature/your-thing`), and open a Pull Request
+
+> ⚠️ **Note:** This project is licensed under AGPLv3. Contributions and forks must remain open source under the same license.
+
+---
+
+## 📄 License
+
+This project is licensed under the **[GNU Affero General Public License v3 (AGPLv3)](LICENSE)**.
+
+### Attribution Requirement
+
+All copies, distributions, and substantial portions (including forks and derivative works) must retain the following notice in source files or visible outputs:
+
+> **Created by caelondev**
+
+This README is not a substitute for the full license. See the **[LICENSE](LICENSE)** file for the complete legal text.
+
+---
+
+## 🎖️ Credits
+
+- **Developer:** [caelondev](https://github.com/caelondev)
+- **Discord Helper:** ryodc_
+- **Framework:** [Discord.js](https://discord.js.org/)
 
 ---
 
 <div align="center">
   <strong>Made with ❤️ for the Discord community</strong>
+  <br><br>
+  <sub>Created by <a href="https://github.com/caelondev">caelondev</a></sub>
 </div>

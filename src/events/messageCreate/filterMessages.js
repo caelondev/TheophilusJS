@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, Message } = require("discord.js");
 const cooldowns = new Set();
 const capitalizeFirstLetter = require("../../utils/capitalizeFirstLetter");

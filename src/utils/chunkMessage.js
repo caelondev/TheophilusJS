@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 module.exports = (message, size = 2000, trail) => {
   const chunks = []
   let start = 0

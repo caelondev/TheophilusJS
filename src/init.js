@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 require("dotenv").config()
 const { Client, IntentsBitField } = require("discord.js")
 const eventHandler = require("./handlers/eventHandler")

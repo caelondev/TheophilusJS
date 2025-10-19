@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const { Client, ChatInputCommandInteraction, PermissionFlagsBits } = require("discord.js");
 const AutoRole = require("../../models/AutoRole");
 

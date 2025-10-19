@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 const path = require("path");
 const getAllFiles = require("./getAllFiles");
 
@@ -10,7 +16,6 @@ module.exports = (exeptions = []) => {
   );
 
   for (const commandCategory of commandCategories) {
-    // Filter to only .js files
     const commandFiles = getAllFiles(commandCategory).filter(file => file.endsWith(".js"));
 
     for (const commandFile of commandFiles) {

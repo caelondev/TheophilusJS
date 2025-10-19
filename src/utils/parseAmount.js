@@ -1,3 +1,9 @@
+/**
+ * Created by caelondev
+ * Licensed under the GNU AGPLv3
+ * See LICENSE for details.
+ */
+
 module.exports = (amount, userBalance) => {
   // Try parsing a number directly
   let parsedAmount = parseFloat(amount);
