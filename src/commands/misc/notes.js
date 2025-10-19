@@ -1,347 +1,453 @@
-const { 
-  Client, 
-  Interaction, 
-  ApplicationCommandOptionType, 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  StringSelectMenuBuilder, 
+const {
+  Client,
+  Interaction,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
   ComponentType,
   ButtonBuilder,
   ButtonStyle,
-  MessageFlags
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } = require("discord.js");
 const Notes = require("../../models/Notes");
-const chunkMessage = require("../../utils/chunkMessage");
 
-const formatNotesTitle = (userNotes) => {
-  const notes = userNotes.notes
-  let formattedNotes = ""
+const NOTES_PER_PAGE = 1;
+const MAX_EMBED_LENGTH = 4096;
 
-  for(const note of notes){
-    formattedNotes += `- **${note.title}**\n`
+const createMainEmbed = (interaction, notesObjArr) => {
+  const embed = new EmbedBuilder()
+    .setColor("Blurple")
+    .setTitle(`${interaction.user.displayName}'s notepad`)
+    .setTimestamp()
+    .setFooter({
+      text: `${interaction.user.displayName}'s notes`,
+      iconURL: interaction.user.avatarURL(),
+    });
+
+  if (notesObjArr.length === 0) {
+    embed.setDescription("No notes yet");
+  } else {
+    const notesList = notesObjArr
+      .map((note, i) => `**${i + 1}.** ${note.title}`)
+      .join("\n");
+    embed.setDescription(notesList);
   }
 
-  return formattedNotes
-}
+  return embed;
+};
 
-const listNotes = async (userNote, notesEmbed, interaction) => {
-  if (!userNote.notes || userNote.notes.length === 0) return interaction.editReply({ content: "You have no notes.", components: [] });
+const createNoteEmbed = (interaction, note, page, totalPages) => {
+  const embed = new EmbedBuilder()
+    .setColor("Blurple")
+    .setTitle(note.title)
+    .setTimestamp()
+    .setFooter({
+      text: `Page ${page + 1}/${totalPages} • ${interaction.user.displayName}'s notes`,
+      iconURL: interaction.user.avatarURL(),
+    });
 
-  const options = userNote.notes.map((note, i) => {
-    const title = note && note.title != null ? String(note.title) : `Untitled ${i + 1}`;
-    return {
-      label: title.slice(0, 100),
-      value: String(i)
-    };
-  });
+  return embed;
+};
 
-  notesEmbed.setTitle(`${interaction.user}'s Notepad`).setDescription(formatNotesTitle(userNote))
+const chunkText = (text, maxLength) => {
+  const chunks = [];
+  let currentChunk = "";
 
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId("note-list")
-    .setMinValues(1)
-    .setMaxValues(1)
-    .setPlaceholder("Expand your notes here...")
-    .addOptions(options);
+  const lines = text.split("\n");
 
-  const row = new ActionRowBuilder().addComponents(menu);
-  const reply = await interaction.editReply({ embeds: [notesEmbed], components: [row] });
+  for (const line of lines) {
+    if ((currentChunk + line + "\n").length > maxLength) {
+      if (currentChunk) chunks.push(currentChunk.trim());
 
-  const collector = reply.createMessageComponentCollector({
-    componentType: ComponentType.StringSelect,
-    time: 600_000
-  });
-
-  collector.on("collect", async (interact) => {
-    const emitter = interact.user;
-    const owner = interaction.user;
-
-    if (emitter.id !== owner.id)
-      return interact.reply({ content: "This is not your notes.", flags: MessageFlags.Ephemeral });
-
-    const note = userNote.notes[Number(interact.values[0])];
-    const chunkedDescription = chunkMessage(note.note);
-    let page = 0;
-    let isHidden = false;
-
-    const createButtons = (currentPage, hidden) => {
-      const components = [];
-      
-      if (chunkedDescription.length > 1) {
-        components.push(
-          new ButtonBuilder()
-            .setCustomId("prev")
-            .setLabel("‹")
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(currentPage === 0),
-          new ButtonBuilder()
-            .setCustomId("next")
-            .setLabel("›")
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(currentPage === chunkedDescription.length - 1)
-        );
+      if (line.length > maxLength) {
+        let remainingLine = line;
+        while (remainingLine.length > 0) {
+          chunks.push(remainingLine.slice(0, maxLength));
+          remainingLine = remainingLine.slice(maxLength);
+        }
+        currentChunk = "";
+      } else {
+        currentChunk = line + "\n";
       }
+    } else {
+      currentChunk += line + "\n";
+    }
+  }
 
-      components.push(
-        new ButtonBuilder()
-          .setCustomId(hidden ? "show" : "hide")
-          .setLabel(hidden ? "Show" : "Hide")
-          .setStyle(hidden ? ButtonStyle.Success : ButtonStyle.Danger)
+  if (currentChunk) chunks.push(currentChunk.trim());
+
+  return chunks.length > 0 ? chunks : [""];
+};
+
+const createMainComponents = (notesObjArr) => {
+  const components = [];
+
+  const addButton = new ButtonBuilder()
+    .setCustomId("notes-create")
+    .setLabel("Add new note")
+    .setStyle(ButtonStyle.Primary);
+
+  if (notesObjArr.length > 0) {
+    const notesListMenu = new StringSelectMenuBuilder()
+      .setCustomId("notes-list-menu")
+      .setMaxValues(1)
+      .setMinValues(1)
+      .setPlaceholder("Select a note to view")
+      .addOptions(
+        notesObjArr.map((note, i) => ({
+          label: note.title.slice(0, 100),
+          value: i.toString(),
+        })),
       );
 
-      return new ActionRowBuilder().addComponents(components);
-    };
-
-    notesEmbed.setTitle(note.title).setDescription(chunkedDescription[page]);
-    const noteMessage = await interact.reply({ 
-      embeds: [notesEmbed], 
-      components: [createButtons(page, isHidden)],
-      fetchReply: true
-    });
-
-    const buttonCollector = noteMessage.createMessageComponentCollector({
-      componentType: ComponentType.Button,
-      time: 600_000
-    });
-
-    buttonCollector.on("collect", async (btnInt) => {
-      if (btnInt.user.id !== owner.id)
-        return btnInt.reply({ content: "This isn't your note.", flags: MessageFlags.Ephemeral });
-
-      if (btnInt.customId === "hide") {
-        await btnInt.message.delete();
-        
-        notesEmbed.setDescription(chunkedDescription[page]);
-        const newMessage = await btnInt.reply({ 
-          content: "🔒 Note is now hidden (only you can see it)",
-          embeds: [notesEmbed], 
-          components: [createButtons(page, true)],
-          flags: MessageFlags.Ephemeral,
-          fetchReply: true
-        });
-
-        isHidden = true;
-
-        const newCollector = newMessage.createMessageComponentCollector({
-          componentType: ComponentType.Button,
-          time: 600_000
-        });
-
-        newCollector.on("collect", async (newBtnInt) => {
-          if (newBtnInt.customId === "show") {
-            await newBtnInt.message.delete();
-
-            notesEmbed.setDescription(chunkedDescription[page]);
-            const publicMessage = await newBtnInt.reply({ 
-              embeds: [notesEmbed], 
-              components: [createButtons(page, false)],
-              fetchReply: true
-            });
-
-            isHidden = false;
-            handlePublicMessage(publicMessage, newBtnInt);
-            return;
-          }
-
-          if (newBtnInt.customId === "prev" && page > 0) page--;
-          else if (newBtnInt.customId === "next" && page < chunkedDescription.length - 1) page++;
-
-          notesEmbed.setDescription(chunkedDescription[page]);
-          await newBtnInt.update({ 
-            content: "🔒 Note is now hidden (only you can see it)",
-            embeds: [notesEmbed], 
-            components: [createButtons(page, true)] 
-          });
-        });
-
-        buttonCollector.stop();
-        return;
-      }
-
-      if (btnInt.customId === "prev" && page > 0) page--;
-      else if (btnInt.customId === "next" && page < chunkedDescription.length - 1) page++;
-
-      notesEmbed.setDescription(chunkedDescription[page]);
-      await btnInt.update({ embeds: [notesEmbed], components: [createButtons(page, isHidden)] });
-    });
-
-    function handlePublicMessage(message, btnInt) {
-      const publicCollector = message.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 600_000
-      });
-
-      publicCollector.on("collect", async (newBtnInt) => {
-        if (newBtnInt.user.id !== owner.id)
-          return newBtnInt.reply({ content: "This isn't your note.", flags: MessageFlags.Ephemeral });
-
-        if (newBtnInt.customId === "hide") {
-          await newBtnInt.message.delete();
-          
-          notesEmbed.setDescription(chunkedDescription[page]);
-          const ephemeralMessage = await newBtnInt.reply({ 
-            embeds: [notesEmbed], 
-            components: [createButtons(page, true)],
-            flags: MessageFlags.Ephemeral,
-            fetchReply: true
-          });
-
-          isHidden = true;
-          handleEphemeralMessage(ephemeralMessage, newBtnInt);
-          publicCollector.stop();
-          return;
-        }
-
-        if (newBtnInt.customId === "prev" && page > 0) page--;
-        else if (newBtnInt.customId === "next" && page < chunkedDescription.length - 1) page++;
-
-        notesEmbed.setDescription(chunkedDescription[page]);
-        await newBtnInt.update({ embeds: [notesEmbed], components: [createButtons(page, false)] });
-      });
-    }
-
-    function handleEphemeralMessage(message, btnInt) {
-      const ephemeralCollector = message.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 600_000
-      });
-
-      ephemeralCollector.on("collect", async (newBtnInt) => {
-        if (newBtnInt.customId === "show") {
-          await newBtnInt.message.delete();
-          
-          notesEmbed.setDescription(chunkedDescription[page]);
-          const publicMessage = await newBtnInt.reply({ 
-            embeds: [notesEmbed], 
-            components: [createButtons(page, false)],
-            fetchReply: true
-          });
-
-          isHidden = false;
-          handlePublicMessage(publicMessage, newBtnInt);
-          ephemeralCollector.stop();
-          return;
-        }
-
-        if (newBtnInt.customId === "prev" && page > 0) page--;
-        else if (newBtnInt.customId === "next" && page < chunkedDescription.length - 1) page++;
-
-        notesEmbed.setDescription(chunkedDescription[page]);
-        await newBtnInt.update({ 
-          embeds: [notesEmbed], 
-          components: [createButtons(page, true)] 
-        });
-      });
-    }
-  });
-};
-
-const addNote = async (userNote, notesEmbed, interaction) => {
-  const title = interaction.options.getString("title");
-  const note = interaction.options.getString("note");
-  const noteObject = { title, note };
-
-  userNote.notes.push(noteObject);
-  await userNote.save();
-
-  notesEmbed.setDescription(`Successfully added **"${title}"** to your notes`);
-  await interaction.editReply({ embeds: [notesEmbed] });
-};
-
-const deleteNote = async (userNote, notesEmbed, interaction) => {
-  const title = interaction.options.getString("note-title");
-  const idx = (userNote.notes || []).findIndex(n => n && String(n.title) === title);
-
-  if (idx === -1) {
-    notesEmbed.setDescription(`Note title not found...`);
-    await interaction.editReply({ embeds: [notesEmbed] });
-    return;
+    components.push(
+      new ActionRowBuilder().addComponents(notesListMenu),
+      new ActionRowBuilder().addComponents(addButton),
+    );
+  } else {
+    components.push(new ActionRowBuilder().addComponents(addButton));
   }
 
-  userNote.notes.splice(idx, 1);
-  await userNote.save();
-  notesEmbed.setDescription(`Deleted **"${title}"**`);
-  await interaction.editReply({ embeds: [notesEmbed] });
+  return components;
+};
+
+const createNoteViewComponents = (noteIndex, currentPage, totalPages) => {
+  const backButton = new ButtonBuilder()
+    .setCustomId("notes-back")
+    .setLabel("Back")
+    .setStyle(ButtonStyle.Secondary);
+
+  const editButton = new ButtonBuilder()
+    .setCustomId(`notes-edit-${noteIndex}`)
+    .setLabel("Edit")
+    .setStyle(ButtonStyle.Primary);
+
+  const deleteButton = new ButtonBuilder()
+    .setCustomId(`notes-delete-${noteIndex}`)
+    .setLabel("Delete")
+    .setStyle(ButtonStyle.Danger);
+
+  const components = [];
+
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`notes-prev-${noteIndex}-${currentPage}`)
+      .setLabel("◀")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === 0);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`notes-next-${noteIndex}-${currentPage}`)
+      .setLabel("▶")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === totalPages - 1);
+
+    components.push(
+      new ActionRowBuilder().addComponents(prevButton, nextButton),
+      new ActionRowBuilder().addComponents(
+        backButton,
+        editButton,
+        deleteButton,
+      ),
+    );
+  } else {
+    components.push(
+      new ActionRowBuilder().addComponents(
+        backButton,
+        editButton,
+        deleteButton,
+      ),
+    );
+  }
+
+  return components;
 };
 
 const handleNotes = async (client, interaction) => {
-  const notesEmbed = new EmbedBuilder().setColor("Blurple").setTimestamp();
-  const subcommand = interaction.options.getSubcommand();
-
   try {
-    await interaction.deferReply();
-    const query = { guildId: interaction.guild.id, userId: interaction.user.id };
-    let userNote = await Notes.findOne(query);
-    if (!userNote) userNote = new Notes(query);
+    const query = {
+      guildId: interaction.guild.id,
+      userId: interaction.user.id,
+    };
+    let userNotes = await Notes.findOne(query);
 
-    switch (subcommand) {
-      case "list":
-        await listNotes(userNote, notesEmbed, interaction);
-        break;
-      case "add":
-        await addNote(userNote, notesEmbed, interaction);
-        break;
-      case "delete":
-        await deleteNote(userNote, notesEmbed, interaction);
-        break;
-      default:
-        await interaction.editReply("Invalid subcommand");
-        break;
+    if (!userNotes) {
+      userNotes = new Notes(query);
+      await userNotes.save();
     }
+
+    const mainEmbed = createMainEmbed(interaction, userNotes.notes);
+    const mainComponents = createMainComponents(userNotes.notes);
+
+    const reply = await interaction.reply({
+      embeds: [mainEmbed],
+      components: mainComponents,
+      fetchReply: true,
+    });
+
+    const collector = reply.createMessageComponentCollector({
+      time: 600000,
+    });
+
+    collector.on("collect", async (i) => {
+      if (i.user.id !== interaction.user.id) {
+        return i.reply({
+          content: "These are not your notes!",
+          ephemeral: true,
+        });
+      }
+
+      if (i.customId === "notes-create") {
+        const modal = new ModalBuilder()
+          .setCustomId("notes-create-modal")
+          .setTitle("Create New Note");
+
+        const titleInput = new TextInputBuilder()
+          .setCustomId("note-title")
+          .setLabel("Note Title")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(100)
+          .setRequired(true);
+
+        const noteInput = new TextInputBuilder()
+          .setCustomId("note-content")
+          .setLabel("Note Content")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(4000)
+          .setRequired(true);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(titleInput),
+          new ActionRowBuilder().addComponents(noteInput),
+        );
+
+        await i.showModal(modal);
+
+        try {
+          const modalSubmit = await i.awaitModalSubmit({
+            time: 300000,
+            filter: (mInteraction) =>
+              mInteraction.customId === "notes-create-modal" &&
+              mInteraction.user.id === i.user.id,
+          });
+
+          const title = modalSubmit.fields.getTextInputValue("note-title");
+          const content = modalSubmit.fields.getTextInputValue("note-content");
+
+          userNotes.notes.push({ title, note: content });
+          await userNotes.save();
+
+          const updatedEmbed = createMainEmbed(interaction, userNotes.notes);
+          const updatedComponents = createMainComponents(userNotes.notes);
+
+          await modalSubmit.update({
+            embeds: [updatedEmbed],
+            components: updatedComponents,
+          });
+        } catch (error) {
+          console.log("Modal timeout or error:", error.message);
+        }
+      } else if (i.customId === "notes-list-menu") {
+        const selectedIndex = parseInt(i.values[0]);
+        const selectedNote = userNotes.notes[selectedIndex];
+
+        const chunks = chunkText(selectedNote.note, MAX_EMBED_LENGTH);
+        const currentPage = 0;
+
+        const noteEmbed = createNoteEmbed(
+          interaction,
+          selectedNote,
+          currentPage,
+          chunks.length,
+        );
+        noteEmbed.setDescription(chunks[currentPage]);
+
+        const noteComponents = createNoteViewComponents(
+          selectedIndex,
+          currentPage,
+          chunks.length,
+        );
+
+        await i.update({
+          embeds: [noteEmbed],
+          components: noteComponents,
+        });
+      } else if (i.customId === "notes-back") {
+        userNotes = await Notes.findOne(query);
+        const mainEmbed = createMainEmbed(interaction, userNotes.notes);
+        const mainComponents = createMainComponents(userNotes.notes);
+
+        await i.update({
+          embeds: [mainEmbed],
+          components: mainComponents,
+        });
+      } else if (i.customId.startsWith("notes-prev-")) {
+        const [_, __, noteIndex, currentPage] = i.customId.split("-");
+        const noteIdx = parseInt(noteIndex);
+        const page = parseInt(currentPage);
+        const newPage = page - 1;
+
+        const selectedNote = userNotes.notes[noteIdx];
+        const chunks = chunkText(selectedNote.note, MAX_EMBED_LENGTH);
+
+        const noteEmbed = createNoteEmbed(
+          interaction,
+          selectedNote,
+          newPage,
+          chunks.length,
+        );
+        noteEmbed.setDescription(chunks[newPage]);
+
+        const noteComponents = createNoteViewComponents(
+          noteIdx,
+          newPage,
+          chunks.length,
+        );
+
+        await i.update({
+          embeds: [noteEmbed],
+          components: noteComponents,
+        });
+      } else if (i.customId.startsWith("notes-next-")) {
+        const [_, __, noteIndex, currentPage] = i.customId.split("-");
+        const noteIdx = parseInt(noteIndex);
+        const page = parseInt(currentPage);
+        const newPage = page + 1;
+
+        const selectedNote = userNotes.notes[noteIdx];
+        const chunks = chunkText(selectedNote.note, MAX_EMBED_LENGTH);
+
+        const noteEmbed = createNoteEmbed(
+          interaction,
+          selectedNote,
+          newPage,
+          chunks.length,
+        );
+        noteEmbed.setDescription(chunks[newPage]);
+
+        const noteComponents = createNoteViewComponents(
+          noteIdx,
+          newPage,
+          chunks.length,
+        );
+
+        await i.update({
+          embeds: [noteEmbed],
+          components: noteComponents,
+        });
+      } else if (i.customId.startsWith("notes-edit-")) {
+        const noteIndex = parseInt(i.customId.split("-")[2]);
+        const selectedNote = userNotes.notes[noteIndex];
+
+        const modal = new ModalBuilder()
+          .setCustomId(`notes-edit-modal-${noteIndex}`)
+          .setTitle("Edit Note");
+
+        const titleInput = new TextInputBuilder()
+          .setCustomId("note-title")
+          .setLabel("Note Title")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(100)
+          .setValue(selectedNote.title)
+          .setRequired(true);
+
+        const noteInput = new TextInputBuilder()
+          .setCustomId("note-content")
+          .setLabel("Note Content")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(4000)
+          .setValue(selectedNote.note)
+          .setRequired(true);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(titleInput),
+          new ActionRowBuilder().addComponents(noteInput),
+        );
+
+        await i.showModal(modal);
+
+        try {
+          const modalSubmit = await i.awaitModalSubmit({
+            time: 300000,
+            filter: (mInteraction) =>
+              mInteraction.customId === `notes-edit-modal-${noteIndex}` &&
+              mInteraction.user.id === i.user.id,
+          });
+
+          const title = modalSubmit.fields.getTextInputValue("note-title");
+          const content = modalSubmit.fields.getTextInputValue("note-content");
+
+          userNotes.notes[noteIndex].title = title;
+          userNotes.notes[noteIndex].note = content;
+          await userNotes.save();
+
+          const chunks = chunkText(content, MAX_EMBED_LENGTH);
+          const currentPage = 0;
+
+          const noteEmbed = createNoteEmbed(
+            interaction,
+            userNotes.notes[noteIndex],
+            currentPage,
+            chunks.length,
+          );
+          noteEmbed.setDescription(chunks[currentPage]);
+
+          const noteComponents = createNoteViewComponents(
+            noteIndex,
+            currentPage,
+            chunks.length,
+          );
+
+          await modalSubmit.update({
+            embeds: [noteEmbed],
+            components: noteComponents,
+          });
+        } catch (error) {
+          console.log("Modal timeout or error:", error.message);
+        }
+      } else if (i.customId.startsWith("notes-delete-")) {
+        const noteIndex = parseInt(i.customId.split("-")[2]);
+
+        userNotes.notes.splice(noteIndex, 1);
+        await userNotes.save();
+
+        const mainEmbed = createMainEmbed(interaction, userNotes.notes);
+        const mainComponents = createMainComponents(userNotes.notes);
+
+        await i.update({
+          embeds: [mainEmbed],
+          components: mainComponents,
+        });
+      }
+    });
+
+    collector.on("end", () => {
+      const disabledComponents = mainComponents.map((row) => {
+        const newRow = ActionRowBuilder.from(row);
+        newRow.components.forEach((component) => component.setDisabled(true));
+        return newRow;
+      });
+
+      interaction.editReply({ components: disabledComponents }).catch(() => {});
+    });
   } catch (error) {
-    console.error(error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.editReply("An error occurred while processing your request. Please try again later.");
-    } else {
-      await interaction.reply("An error occurred while processing your request. Please try again later.");
+    console.log(error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "An error occurred while processing your notes.",
+        ephemeral: true,
+      });
     }
   }
 };
 
 module.exports = {
   name: "notes",
-  description: "Create, view, and manage your personal note",
-  options: [
-    {
-      name: "list",
-      description: "View your notes",
-      type: ApplicationCommandOptionType.Subcommand
-    },
-    {
-      name: "add",
-      description: "Add a new note",
-      type: ApplicationCommandOptionType.Subcommand,
-      options: [
-        {
-          name: "title",
-          description: "Your new note's title",
-          type: ApplicationCommandOptionType.String,
-          required: true
-        },
-        {
-          name: "note",
-          description: "The note you want to add",
-          type: ApplicationCommandOptionType.String,
-          required: true
-        }
-      ]
-    },
-    {
-      name: "delete",
-      description: "Delete a note",
-      type: ApplicationCommandOptionType.Subcommand,
-      options: [
-        {
-          name: "note-title",
-          description: "The note's title (CASE SENSITIVE)",
-          type: ApplicationCommandOptionType.String,
-          required: true
-        }
-      ]
-    }
-  ],
+  description: "Create, view, and manage your personal notes",
+  options: [],
   cooldown: 5000,
   serverSpecific: true,
-  beta: true,
-  callback: handleNotes
+  callback: handleNotes,
 };
