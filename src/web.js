@@ -16,15 +16,22 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.static(path.join(__dirname, "public")));
 
-const limiter = rateLimit({
+const rateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 100,
+  max: 40,
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const pingRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 40,
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-app.use(limiter);
+app.use(rateLimiter);
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -32,7 +39,7 @@ app.get("/", (req, res) => {
 
 let currentSessionPings = 0;
 
-app.get("/ping", async (_, res) => {
+app.get("/ping", pingRateLimiter, async (_, res) => {
   try {
     let totalWebPings = await TotalWebPings.findOne();
 
@@ -41,8 +48,12 @@ app.get("/ping", async (_, res) => {
       await totalWebPings.save();
     }
 
-    totalWebPings.count++;
     currentSessionPings++;
+    totalWebPings.count =
+      currentSessionPings < totalWebPings.count
+        ? totalWebPings.count + 1
+        : currentSessionPings;
+
     await totalWebPings.save();
 
     res.status(200).json({
