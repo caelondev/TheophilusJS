@@ -38,6 +38,7 @@ app.get("/ping", async (_, res) => {
 
     if (!totalWebPings) {
       totalWebPings = new TotalWebPings({ count: 0 });
+      await totalWebPings.save();
     }
 
     totalWebPings.count++;
