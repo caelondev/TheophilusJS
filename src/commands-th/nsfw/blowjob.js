@@ -30,7 +30,7 @@ const options = [
  * @param {Client} client
  * @param {Message} message
  * */
-const handleHelp = async (client, message) => {
+const handleBlowjob = async (client, message) => {
   const blowjobEmbed = new EmbedBuilder().setColor("Blurple").setTimestamp().setFooter({ text: `Got a head from ${message.author.displayName}`, iconURL: message.author.avatarURL() })
 
   try {
@@ -52,6 +52,6 @@ module.exports = {
   name: "blowjob",
   description: "Give someone a head",
   options,
-  callback: handleHelp,
+  callback: handleBlowjob,
 };
 

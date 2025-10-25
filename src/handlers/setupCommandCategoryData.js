@@ -25,7 +25,7 @@ const mergeWithTemplate = (current, template)=>{
 const main = async () => {
   try {
     const allCategories = getAllFiles(COMMANDS_PATH, true);
-    const templatePath = path.join(__dirname, "..", "..", "template", "directory", "category-config.json");
+    const templatePath = path.join(__dirname, "../../template/directory/category-config.json");
     const templateRaw = await fsp.readFile(templatePath, "utf8");
     const template = JSON.parse(templateRaw);
 
